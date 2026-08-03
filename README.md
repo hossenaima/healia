@@ -4,7 +4,7 @@ A personal health log: a morning weigh-in with a progress chart, and a daily
 meal log that can estimate calories from a plain-language description.
 
 Built for one person. There are no accounts — the whole app sits behind a single
-PIN, and all data lives in one SQLite file on the server.
+PIN, and all data lives in one Postgres database (Supabase).
 
 ## Sections
 
@@ -36,7 +36,8 @@ your PIN.
 
 ```bash
 npm install
-npx prisma migrate dev     # creates dev.db
+cp .env.example .env       # then fill in the connection strings
+npx prisma migrate deploy  # creates the tables
 npm run dev                # http://localhost:3000
 ```
 
@@ -47,7 +48,8 @@ before that PIN exists.
 
 | Variable | Required | What it does |
 | --- | --- | --- |
-| `DATABASE_URL` | yes | SQLite path, e.g. `file:./dev.db`. In production, point it at a persistent volume. |
+| `DATABASE_URL` | yes | Supabase **transaction pooler** URI, port `6543`, with `?pgbouncer=true`. Used by the app at runtime. |
+| `DIRECT_URL` | yes | Supabase **session pooler** URI, port `5432`. Used only to run migrations — the transaction pooler cannot run DDL. |
 | `SESSION_SECRET` | in production | Random string, 16+ characters. Signs the session cookie. The app refuses to start in production without it. |
 | `APP_TIMEZONE` | no | Your timezone, e.g. `America/New_York`. Decides which calendar day an entry belongs to when the server runs in UTC. Defaults to `America/New_York`. |
 | `OPENAI_API_KEY` | no | Turns on calorie estimation. Without it the app still works; the estimate button is disabled and says why. |
@@ -61,30 +63,21 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ## Deploying
 
-The app needs a host that keeps a **persistent disk**, because the database is a
-file. Railway, Fly.io, and Render all work; Vercel does not, since its
-filesystem is ephemeral.
+The app holds no local state, so any host works — Vercel included.
 
-1. Create the service from this repo and let it run `npm run build`.
-2. Mount a volume and point `DATABASE_URL` at it, e.g. `file:/data/healia.db`.
-3. Set `SESSION_SECRET`, and `APP_TIMEZONE` if you are not on US Eastern.
-4. Add `OPENAI_API_KEY` when you want calorie estimation on.
+1. Import this repo and let it run `npm run build`.
+2. Set `DATABASE_URL`, `DIRECT_URL`, and `SESSION_SECRET`, plus `APP_TIMEZONE`
+   if you are not on US Eastern.
+3. Add `OPENAI_API_KEY` when you want calorie estimation on.
 
 `npm run build` runs `prisma migrate deploy` first, so schema changes apply on
 each deploy.
 
 Once it is up, open it on your phone and add it to the home screen.
 
-### Moving to hosted Postgres later
-
-If you outgrow a single file, the change is small:
-
-1. In `prisma/schema.prisma`, set `provider = "postgresql"`.
-2. Swap `@prisma/adapter-better-sqlite3` for `@prisma/adapter-pg` in
-   `src/lib/db.ts`.
-3. Point `DATABASE_URL` at the new database and run `npx prisma migrate dev`.
-
-Nothing above the data layer refers to SQLite.
+Note that Supabase pauses free-tier projects after a stretch of inactivity.
+Daily use avoids it, but after a long break you may need to resume the project
+from the dashboard before the app can reach the database.
 
 ## Notes on the data model
 
@@ -94,3 +87,8 @@ makes entries jump days across DST and travel.
 
 Weights are always stored in pounds. The `units` setting only changes how they
 are displayed and how your typed input is read.
+
+Supabase is used purely as a Postgres host. The app does not use Supabase Auth,
+row-level security, or the JavaScript client — it connects over the Postgres
+wire protocol through Prisma, so swapping to any other Postgres provider means
+changing two environment variables and nothing else.

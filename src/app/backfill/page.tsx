@@ -1,23 +1,30 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
-import { getSettings } from "@/lib/settings";
+import { currentUser } from "@/lib/auth";
 import { Shell } from "@/components/shell";
 import { BackfillForm } from "@/components/backfill-form";
+import { HealthImport } from "@/components/health-import";
 
 export default async function BackfillPage() {
-  if (!(await isAuthenticated())) redirect("/login");
-
-  const { units } = await getSettings();
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   return (
-    <Shell eyebrow="Section 01 — Readings" title="Add past entries">
+    <Shell user={user} eyebrow="Section 01 — Readings" title="Add past entries">
       <p className="mt-4 text-sm text-ink-muted">
-        Type or paste the weigh-ins you want to keep from Noom. A date that
-        already has an entry is overwritten, so you can re-import safely.
+        Bring in weigh-ins from before you started here. A date that already has
+        an entry is overwritten, so importing twice is safe.
       </p>
 
-      <BackfillForm units={units} />
+      <section className="mt-6">
+        <h2 className="eyebrow">Import</h2>
+        <HealthImport units={user.units} />
+      </section>
+
+      <section className="mt-10">
+        <h2 className="eyebrow">Or type them in</h2>
+        <BackfillForm units={user.units} />
+      </section>
 
       <Link
         href="/"

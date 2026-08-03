@@ -4,8 +4,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * Session token verification, kept free of database and `server-only` imports
  * so `proxy.ts` can use it without pulling Prisma into the proxy bundle.
  *
- * Format: `<expiresAtMs>.<hmac>`. There is only ever one user, so the token
- * carries no identity — just an expiry the server can verify it issued.
+ * Format: `<userId>.<expiresAtMs>.<hmac>`. The signature covers both the user
+ * id and the expiry, so a token cannot be edited to impersonate another account
+ * or to extend its own life.
  */
 
 export const SESSION_COOKIE = "healia_session";
@@ -26,21 +27,40 @@ function sign(payload: string): string {
   return createHmac("sha256", sessionSecret()).update(payload).digest("hex");
 }
 
-export function createSessionToken(): string {
-  const payload = String(Date.now() + SESSION_DAYS * 86_400_000);
+export function createSessionToken(userId: string): string {
+  const payload = `${userId}.${Date.now() + SESSION_DAYS * 86_400_000}`;
   return `${payload}.${sign(payload)}`;
 }
 
-export function isValidSessionToken(token: string | undefined): boolean {
-  if (!token) return false;
-  const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
+/**
+ * Returns the user id the token vouches for, or null if it is missing, forged,
+ * or expired. Callers must treat null as "not signed in".
+ */
+export function userIdFromToken(token: string | undefined): string | null {
+  if (!token) return null;
+
+  const lastDot = token.lastIndexOf(".");
+  if (lastDot <= 0) return null;
+
+  const payload = token.slice(0, lastDot);
+  const signature = token.slice(lastDot + 1);
 
   const expected = sign(payload);
   const a = Buffer.from(signature, "hex");
   const b = Buffer.from(expected, "hex");
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
 
-  const expiresAt = Number(payload);
-  return Number.isFinite(expiresAt) && expiresAt > Date.now();
+  const split = payload.lastIndexOf(".");
+  if (split <= 0) return null;
+
+  const userId = payload.slice(0, split);
+  const expiresAt = Number(payload.slice(split + 1));
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null;
+
+  return userId || null;
+}
+
+/** Cheap check for the proxy, which only needs to know if a session looks valid. */
+export function isValidSessionToken(token: string | undefined): boolean {
+  return userIdFromToken(token) !== null;
 }

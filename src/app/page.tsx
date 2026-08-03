@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { isAuthenticated, isSetupComplete } from "@/lib/auth";
-import { getSettings } from "@/lib/settings";
+import { currentUser, hasAnyUser } from "@/lib/auth";
 import { serverToday, formatDayShort } from "@/lib/dates";
 import { formatDelta, fromLbs, formatWeight, type Units } from "@/lib/units";
 import { Shell } from "@/components/shell";
@@ -15,15 +14,17 @@ import { deleteWeightAction } from "@/app/actions/weight";
 export const dynamic = "force-dynamic";
 
 export default async function WeightPage() {
-  if (!(await isSetupComplete())) redirect("/setup");
-  if (!(await isAuthenticated())) redirect("/login");
+  if (!(await hasAnyUser())) redirect("/signup");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
-  const [settings, entries] = await Promise.all([
-    getSettings(),
-    prisma.weightEntry.findMany({ orderBy: { date: "asc" } }),
-  ]);
+  // Scoped to this account — the other user's log is never read here.
+  const entries = await prisma.weightEntry.findMany({
+    where: { userId: user.id },
+    orderBy: { date: "asc" },
+  });
 
-  const { units, goalWeightLbs } = settings;
+  const { units, goalWeightLbs } = user;
   const today = serverToday();
 
   const latest = entries.at(-1) ?? null;
@@ -32,7 +33,7 @@ export default async function WeightPage() {
 
   // Falls back to the earliest logged weigh-in when no start weight is set, so
   // "since start" means something from day one.
-  const startLbs = settings.startWeightLbs ?? entries[0]?.weightLbs ?? null;
+  const startLbs = user.startWeightLbs ?? entries[0]?.weightLbs ?? null;
 
   const sinceLast =
     latest && previous ? latest.weightLbs - previous.weightLbs : null;
@@ -54,7 +55,7 @@ export default async function WeightPage() {
       : null;
 
   return (
-    <Shell eyebrow="Section 01 — Readings" title="Weight">
+    <Shell user={user} eyebrow="Section 01 — Readings" title="Weight">
       {latest ? (
         <section className="mt-6" aria-label="Current reading">
           <div className="flex items-end justify-between gap-4">

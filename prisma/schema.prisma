@@ -4,6 +4,9 @@
 // Days are stored as plain "YYYY-MM-DD" strings rather than DateTime. A morning
 // weigh-in belongs to a calendar day in the user's local timezone; storing it as
 // a UTC instant makes entries jump days across DST and travel.
+//
+// Every row of health data hangs off a User. Accounts are fully isolated: no
+// query in the app reads a WeightEntry or Meal without filtering on userId.
 
 generator client {
   provider = "prisma-client"
@@ -14,32 +17,53 @@ datasource db {
   provider = "postgresql"
 }
 
-/// Single-row table (id is always 1) holding app configuration.
-model Settings {
-  id             Int      @id @default(1)
+model User {
+  id String @id @default(cuid())
+
+  /// Name as typed, used for display.
+  name   String
+  /// Lowercased `name`, used for lookup — so "Aima" and "aima" are one account.
+  handle String @unique
+
+  /// scrypt hash of this user's PIN.
+  pinHash String
+  pinSalt String
+
   /// Canonical storage is always pounds; `units` only controls display.
   goalWeightLbs  Float?
   startWeightLbs Float?
   heightInches   Float?
-  units          String   @default("lb") // "lb" | "kg"
-  /// scrypt hash of the app PIN. Null until first-run setup completes.
-  pinHash        String?
-  pinSalt        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
+  units          String @default("lb") // "lb" | "kg"
 
-model WeightEntry {
-  /// "YYYY-MM-DD" local day. One weigh-in per day, so the day is the key.
-  date      String   @id
-  weightLbs Float
-  note      String?
+  weightEntries WeightEntry[]
+  meals         Meal[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model WeightEntry {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// "YYYY-MM-DD" local day. One weigh-in per person per day.
+  date      String
+  weightLbs Float
+  note      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
 model Meal {
-  id   String @id @default(cuid())
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   /// "YYYY-MM-DD" local day.
   date String
   /// "breakfast" | "lunch" | "dinner" | "snack"
@@ -52,7 +76,7 @@ model Meal {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([date])
+  @@index([userId, date])
 }
 
 model MealItem {

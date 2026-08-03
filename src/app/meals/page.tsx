@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { isAuthenticated } from "@/lib/auth";
+import { currentUser } from "@/lib/auth";
 import { addDays, formatDayLong, isDayKey, serverToday } from "@/lib/dates";
 import { getEstimator } from "@/lib/ai/estimator";
 import { Shell } from "@/components/shell";
@@ -12,7 +12,8 @@ import { MEAL_SLOTS, SLOT_LABELS, type MealSlot } from "@/lib/meals";
 const SLOT_ORDER: readonly string[] = MEAL_SLOTS;
 
 export default async function MealsPage(props: PageProps<"/meals">) {
-  if (!(await isAuthenticated())) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   const { d } = await props.searchParams;
   const requested = typeof d === "string" && isDayKey(d) ? d : null;
@@ -20,7 +21,7 @@ export default async function MealsPage(props: PageProps<"/meals">) {
   const today = serverToday();
 
   const meals = await prisma.meal.findMany({
-    where: { date },
+    where: { userId: user.id, date },
     include: { items: true },
     orderBy: { createdAt: "asc" },
   });
@@ -38,7 +39,7 @@ export default async function MealsPage(props: PageProps<"/meals">) {
   const counted = meals.some((m) => m.items.some((i) => i.calories !== null));
 
   return (
-    <Shell eyebrow="Section 02 — Intake" title="Meals">
+    <Shell user={user} eyebrow="Section 02 — Intake" title="Meals">
       <nav
         aria-label="Choose a day"
         className="mt-5 flex items-center justify-between gap-3"

@@ -1,11 +1,14 @@
 import { Nav } from "@/components/nav";
 import { logoutAction } from "@/app/actions/auth";
+import type { SessionUser } from "@/lib/auth";
 
 export function Shell({
+  user,
   eyebrow,
   title,
   children,
 }: {
+  user: Pick<SessionUser, "name">;
   eyebrow: string;
   title: string;
   children: React.ReactNode;
@@ -13,18 +16,22 @@ export function Shell({
   return (
     <>
       <header className="border-b border-rule bg-surface md:bg-transparent">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4 md:px-6">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-5 py-4 md:px-6">
           <span className="font-cond text-lg font-bold tracking-tight">
             Healia
           </span>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="eyebrow transition-colors hover:!text-ink"
-            >
-              Lock
-            </button>
-          </form>
+          <div className="flex min-w-0 items-center gap-3">
+            {/* Whose log this is — the app holds more than one. */}
+            <span className="eyebrow truncate !text-ink-muted">{user.name}</span>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="eyebrow transition-colors hover:!text-ink"
+              >
+                Lock
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 

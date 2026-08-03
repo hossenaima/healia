@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { isDayKey } from "@/lib/dates";
 import {
   EstimatorUnavailableError,
@@ -33,7 +33,7 @@ export async function saveMealAction(
   _prev: MealActionResult,
   formData: FormData,
 ): Promise<MealActionResult> {
-  await requireAuth();
+  const user = await requireUser();
 
   const parsed = mealSchema.safeParse({
     date: formData.get("date"),
@@ -94,6 +94,7 @@ export async function saveMealAction(
 
   await prisma.meal.create({
     data: {
+      userId: user.id,
       date,
       slot,
       note,
@@ -116,24 +117,25 @@ export async function saveMealAction(
 }
 
 export async function deleteMealAction(formData: FormData) {
-  await requireAuth();
+  const user = await requireUser();
 
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  await prisma.meal.delete({ where: { id } }).catch(() => {
-    // Already deleted from another tab — nothing to do.
-  });
+  // Scoped by userId, so a forged post cannot delete someone else's meal.
+  await prisma.meal.deleteMany({ where: { id, userId: user.id } });
 
   revalidatePath("/meals");
 }
 
 export async function deleteMealItemAction(formData: FormData) {
-  await requireAuth();
+  const user = await requireUser();
 
   const id = String(formData.get("itemId") ?? "");
   if (!id) return;
 
-  await prisma.mealItem.delete({ where: { id } }).catch(() => {});
+  await prisma.mealItem.deleteMany({
+    where: { id, meal: { userId: user.id } },
+  });
   revalidatePath("/meals");
 }

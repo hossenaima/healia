@@ -11,7 +11,7 @@ export function MealForm({
   aiEnabled,
 }: {
   date: string;
-  /** False when no OPENAI_API_KEY is configured. */
+  /** False when no ANTHROPIC_API_KEY is configured. */
   aiEnabled: boolean;
 }) {
   const [state, formAction, pending] = useActionState(saveMealAction, INITIAL);
@@ -119,7 +119,7 @@ export function MealForm({
           title={
             aiEnabled
               ? undefined
-              : "Add OPENAI_API_KEY to your environment to turn this on."
+              : "Add ANTHROPIC_API_KEY to your environment to turn this on."
           }
           className="
             flex-1 rounded-lg bg-ink px-4 py-3 font-cond text-sm font-semibold
@@ -133,8 +133,8 @@ export function MealForm({
 
       {!aiEnabled && (
         <p className="mt-3 text-xs text-ink-muted">
-          Calorie estimation is off. Add an OpenAI API key to your environment to
-          turn it on.
+          Calorie estimation is off. Add an Anthropic API key to your environment
+          to turn it on.
         </p>
       )}
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { hashPin, requireAuth, verifyPin } from "@/lib/auth";
+import { hashPin, requireUser, verifyPin } from "@/lib/auth";
 import { toLbs } from "@/lib/units";
 
 export type SettingsResult = { ok: boolean; error?: string; message?: string };
@@ -25,7 +25,7 @@ export async function saveSettingsAction(
   _prev: SettingsResult,
   formData: FormData,
 ): Promise<SettingsResult> {
-  await requireAuth();
+  const user = await requireUser();
 
   const parsed = settingsSchema.safeParse({
     units: formData.get("units"),
@@ -42,16 +42,9 @@ export async function saveSettingsAction(
 
   // Goal and start weights are typed in the unit selected on this same form, so
   // they convert against the incoming unit rather than the previously saved one.
-  await prisma.settings.upsert({
-    where: { id: 1 },
-    update: {
-      units,
-      goalWeightLbs: goalWeight === null ? null : toLbs(goalWeight, units),
-      startWeightLbs: startWeight === null ? null : toLbs(startWeight, units),
-      heightInches,
-    },
-    create: {
-      id: 1,
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
       units,
       goalWeightLbs: goalWeight === null ? null : toLbs(goalWeight, units),
       startWeightLbs: startWeight === null ? null : toLbs(startWeight, units),
@@ -70,7 +63,7 @@ export async function changePinAction(
   _prev: SettingsResult,
   formData: FormData,
 ): Promise<SettingsResult> {
-  await requireAuth();
+  const user = await requireUser();
 
   const current = String(formData.get("currentPin") ?? "");
   const next = String(formData.get("newPin") ?? "");
@@ -79,18 +72,16 @@ export async function changePinAction(
   if (!PIN_RULE.test(next)) return { ok: false, error: "PIN must be 4–10 digits." };
   if (next !== confirm) return { ok: false, error: "The two PINs do not match." };
 
-  const settings = await prisma.settings.findUnique({ where: { id: 1 } });
-  if (!settings?.pinHash || !settings?.pinSalt) {
-    return { ok: false, error: "No PIN is set." };
-  }
+  const row = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!row) return { ok: false, error: "Account not found." };
 
-  if (!(await verifyPin(current, settings.pinHash, settings.pinSalt))) {
+  if (!(await verifyPin(current, row.pinHash, row.pinSalt))) {
     return { ok: false, error: "Current PIN is incorrect." };
   }
 
   const { hash, salt } = await hashPin(next);
-  await prisma.settings.update({
-    where: { id: 1 },
+  await prisma.user.update({
+    where: { id: user.id },
     data: { pinHash: hash, pinSalt: salt },
   });
 

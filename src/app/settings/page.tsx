@@ -1,28 +1,27 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
-import { getSettings } from "@/lib/settings";
+import { currentUser } from "@/lib/auth";
 import { getEstimator } from "@/lib/ai/estimator";
 import { fromLbs } from "@/lib/units";
 import { Shell } from "@/components/shell";
 import { GoalForm, PinChangeForm } from "@/components/settings-forms";
 
 export default async function SettingsPage() {
-  if (!(await isAuthenticated())) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
-  const settings = await getSettings();
-  const { units } = settings;
+  const { units } = user;
   const aiEnabled = getEstimator().available;
 
   return (
-    <Shell eyebrow="Section 03 — Configuration" title="Settings">
+    <Shell user={user} eyebrow="Section 03 — Configuration" title="Settings">
       <section className="mt-6">
         <h2 className="eyebrow">Goal</h2>
         <GoalForm
           units={units}
-          goalWeight={display(settings.goalWeightLbs, units)}
-          startWeight={display(settings.startWeightLbs, units)}
-          heightInches={settings.heightInches}
+          goalWeight={display(user.goalWeightLbs, units)}
+          startWeight={display(user.startWeightLbs, units)}
+          heightInches={user.heightInches}
         />
       </section>
 
@@ -30,15 +29,13 @@ export default async function SettingsPage() {
         <h2 className="eyebrow">Calorie estimation</h2>
         <div className="mt-4 rounded-xl border border-rule bg-surface p-5">
           <p className="text-sm">
-            {aiEnabled ? "On." : "Off."} Estimation runs through OpenAI using the
-            key in your server environment.
+            {aiEnabled ? "On." : "Off."} Estimation runs through Claude using
+            the key in your server environment.
           </p>
           {!aiEnabled && (
             <p className="mt-2 text-sm text-ink-muted">
-              Set <code className="tnum text-xs">OPENAI_API_KEY</code> where the
-              app is hosted, then restart it. Optionally set{" "}
-              <code className="tnum text-xs">OPENAI_MODEL</code> to pick a
-              different model.
+              Set <code className="tnum text-xs">ANTHROPIC_API_KEY</code> where
+              the app is hosted, then restart it.
             </p>
           )}
         </div>

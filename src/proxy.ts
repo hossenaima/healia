@@ -4,7 +4,7 @@ import { SESSION_COOKIE, isValidSessionToken } from "@/lib/session";
 // Optimistic gate only: it keeps signed-out visitors from seeing app shells.
 // It deliberately does not touch the database — every server action and
 // protected page re-checks with requireAuth(), which is the real boundary.
-const PUBLIC_PATHS = ["/login", "/setup"];
+const PUBLIC_PATHS = ["/login", "/signup"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

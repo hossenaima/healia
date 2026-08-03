@@ -52,8 +52,8 @@ before that PIN exists.
 | `DIRECT_URL` | yes | Supabase **session pooler** URI, port `5432`. Used only to run migrations — the transaction pooler cannot run DDL. |
 | `SESSION_SECRET` | in production | Random string, 16+ characters. Signs the session cookie. The app refuses to start in production without it. |
 | `APP_TIMEZONE` | no | Your timezone, e.g. `America/New_York`. Decides which calendar day an entry belongs to when the server runs in UTC. Defaults to `America/New_York`. |
-| `OPENAI_API_KEY` | no | Turns on calorie estimation. Without it the app still works; the estimate button is disabled and says why. |
-| `OPENAI_MODEL` | no | Defaults to `gpt-4o-mini`. Change it to use a different model. |
+| `ANTHROPIC_API_KEY` | no | Turns on calorie estimation via Claude. Without it the app still works; the estimate button is disabled and says why. |
+| `ALLOW_SIGNUP` | no | Set to `false` to close signup once everyone who needs an account has one. The first account is always allowed. |
 
 Generate a session secret with:
 
@@ -68,7 +68,7 @@ The app holds no local state, so any host works — Vercel included.
 1. Import this repo and let it run `npm run build`.
 2. Set `DATABASE_URL`, `DIRECT_URL`, and `SESSION_SECRET`, plus `APP_TIMEZONE`
    if you are not on US Eastern.
-3. Add `OPENAI_API_KEY` when you want calorie estimation on.
+3. Add `ANTHROPIC_API_KEY` when you want calorie estimation on.
 
 `npm run build` runs `prisma migrate deploy` first, so schema changes apply on
 each deploy.

@@ -11,26 +11,44 @@ export function PinForm({
   next,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
-  mode: "login" | "setup";
+  mode: "login" | "signup";
   next?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
-  const isSetup = mode === "setup";
+  const isSignup = mode === "signup";
 
   return (
     <form action={formAction} className="mt-8 space-y-5">
       {next && <input type="hidden" name="next" value={next} />}
 
-      <Field
+      <div>
+        <label htmlFor="name" className="eyebrow">
+          Name
+        </label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoFocus
+          maxLength={30}
+          className="
+            mt-2 w-full border-b-2 border-rule bg-transparent pb-1 text-2xl
+            focus:border-trace focus:outline-none
+          "
+        />
+      </div>
+
+      <PinField
         id="pin"
         name="pin"
-        label={isSetup ? "Choose a PIN" : "PIN"}
-        autoFocus
-        autoComplete={isSetup ? "new-password" : "current-password"}
+        label={isSignup ? "Choose a PIN" : "PIN"}
+        autoComplete={isSignup ? "new-password" : "current-password"}
       />
 
-      {isSetup && (
-        <Field
+      {isSignup && (
+        <PinField
           id="confirm"
           name="confirm"
           label="Confirm PIN"
@@ -47,7 +65,7 @@ export function PinForm({
           hover:opacity-90 disabled:opacity-40
         "
       >
-        {pending ? "Working" : isSetup ? "Create PIN" : "Unlock"}
+        {pending ? "Working" : isSignup ? "Create account" : "Unlock"}
       </button>
 
       {state.error && (
@@ -59,17 +77,15 @@ export function PinForm({
   );
 }
 
-function Field({
+function PinField({
   id,
   name,
   label,
-  autoFocus,
   autoComplete,
 }: {
   id: string;
   name: string;
   label: string;
-  autoFocus?: boolean;
   autoComplete: string;
 }) {
   return (
@@ -83,7 +99,6 @@ function Field({
         type="password"
         inputMode="numeric"
         pattern="\d*"
-        autoFocus={autoFocus}
         autoComplete={autoComplete}
         className="
           tnum mt-2 w-full border-b-2 border-rule bg-transparent pb-1 text-3xl

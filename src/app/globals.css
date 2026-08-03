@@ -1,26 +1,125 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Healia — "the morning instrument"
+ *
+ * The app is a daily readings log, so it is built like an instrument panel
+ * rather than a coaching app: one superfamily (IBM Plex) differentiated by
+ * width and weight, numerals always mono and tabular so figures line up down a
+ * column, and exactly two chart hues — a teal trace descending toward a plum
+ * goal horizon. Both hues are validated for CVD separation in both modes.
+ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --ground: #f1f4f3; /* pale cool mint-grey page */
+  --surface: #ffffff;
+  --surface-sunk: #e8edec;
+  --ink: #14232b; /* deep petrol */
+  --ink-muted: #556670;
+  --ink-faint: #8b9aa2;
+  --rule: #d6dedc;
+
+  --trace: #00907f; /* weight line */
+  --trace-soft: #00907f1f;
+  --goal: #9a3ba0; /* goal horizon */
+
+  --down: #2f6f45; /* moving toward goal */
+  --up: #a2472c; /* moving away */
+
+  --focus: #14232b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --ground: #0c1817;
+    --surface: #101e1d;
+    --surface-sunk: #162725;
+    --ink: #e6efec;
+    --ink-muted: #9fb3ae;
+    --ink-faint: #6d827e;
+    --rule: #22403c;
+
+    --trace: #12ad94;
+    --trace-soft: #12ad9429;
+    --goal: #be6fc9;
+
+    --down: #63c187;
+    --up: #e08a6a;
+
+    --focus: #e6efec;
   }
 }
 
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-trace: var(--trace);
+  --color-goal: var(--goal);
+  --color-down: var(--down);
+  --color-up: var(--up);
+
+  --font-sans: var(--font-plex-sans);
+  --font-cond: var(--font-plex-cond);
+  --font-mono: var(--font-plex-mono);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Figures are meant to be compared down a column, so they never reflow. */
+.tnum {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
+}
+
+/* Small structural labels: the instrument-panel voice. */
+.eyebrow {
+  font-family: var(--font-plex-cond), var(--font-plex-sans), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  font-size: 0.6875rem;
+  color: var(--ink-faint);
+}
+
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* The one orchestrated moment: readings settle into place on load. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.settle {
+  animation: settle 420ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

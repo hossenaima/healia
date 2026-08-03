@@ -1,0 +1,75 @@
+// Healia — personal health tracker
+// Docs: https://pris.ly/d/prisma-schema
+//
+// Days are stored as plain "YYYY-MM-DD" strings rather than DateTime. A morning
+// weigh-in belongs to a calendar day in the user's local timezone; storing it as
+// a UTC instant makes entries jump days across DST and travel.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Single-row table (id is always 1) holding app configuration.
+model Settings {
+  id             Int      @id @default(1)
+  /// Canonical storage is always pounds; `units` only controls display.
+  goalWeightLbs  Float?
+  startWeightLbs Float?
+  heightInches   Float?
+  units          String   @default("lb") // "lb" | "kg"
+  /// scrypt hash of the app PIN. Null until first-run setup completes.
+  pinHash        String?
+  pinSalt        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model WeightEntry {
+  /// "YYYY-MM-DD" local day. One weigh-in per day, so the day is the key.
+  date      String   @id
+  weightLbs Float
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Meal {
+  id   String @id @default(cuid())
+  /// "YYYY-MM-DD" local day.
+  date String
+  /// "breakfast" | "lunch" | "dinner" | "snack"
+  slot String
+  /// What the user typed, verbatim, before any AI parsing.
+  note String @default("")
+
+  items MealItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model MealItem {
+  id       String  @id @default(cuid())
+  mealId   String
+  meal     Meal    @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  name     String
+  /// Free text, e.g. "1 cup", "2 slices".
+  quantity String?
+  calories Int?
+  proteinG Float?
+  carbsG   Float?
+  fatG     Float?
+  /// "manual" | "ai" — lets the UI flag estimates the user has not confirmed.
+  source   String  @default("manual")
+
+  createdAt DateTime @default(now())
+
+  @@index([mealId])
+}

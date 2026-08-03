@@ -8,6 +8,9 @@ import { Shell } from "@/components/shell";
 import { WeighInForm } from "@/components/weigh-in-form";
 import { WeightChart } from "@/components/weight-chart";
 import { deleteWeightAction } from "@/app/actions/weight";
+import { WaterWeightBanner } from "@/components/water-weight-banner";
+import { flaggedMeals, rollingAverage } from "@/lib/nutrition";
+import { addDays } from "@/lib/dates";
 
 // Auth state and the log itself change per request; nothing here may be
 // prerendered at build time.
@@ -24,6 +27,17 @@ export default async function WeightPage() {
     orderBy: { date: "asc" },
   });
 
+  // Only the last couple of days of meals are needed: the banner explains an
+  // overnight jump, so anything older cannot be the cause.
+  const latestDate = entries.at(-1)?.date ?? serverToday();
+  const recentMeals = await prisma.meal.findMany({
+    where: {
+      userId: user.id,
+      date: { gte: addDays(latestDate, -2), lte: latestDate },
+    },
+    include: { items: true },
+  });
+
   const { units, goalWeightLbs } = user;
   const today = serverToday();
 
@@ -34,6 +48,19 @@ export default async function WeightPage() {
   // Falls back to the earliest logged weigh-in when no start weight is set, so
   // "since start" means something from day one.
   const startLbs = user.startWeightLbs ?? entries[0]?.weightLbs ?? null;
+
+  // A 7-day trailing mean over calendar days, so gaps in logging do not
+  // compress the window and overstate a short-term swing.
+  const byDate = new Map(entries.map((e) => [e.date, e.weightLbs]));
+  const calendar: Array<{ date: string; value: number | null }> = [];
+  if (entries.length > 0) {
+    for (let d = entries[0].date; d <= latestDate; d = addDays(d, 1)) {
+      calendar.push({ date: d, value: byDate.get(d) ?? null });
+    }
+  }
+  const trendByDate = new Map(
+    rollingAverage(calendar, 7).map((r) => [r.date, r.average]),
+  );
 
   const sinceLast =
     latest && previous ? latest.weightLbs - previous.weightLbs : null;
@@ -54,8 +81,36 @@ export default async function WeightPage() {
         )
       : null;
 
+  // Explain an overnight jump when a flagged meal came before it. The window
+  // reaches back through the previous day so a late dinner still counts.
+  const flagged = flaggedMeals(
+    recentMeals.filter(
+      (m) => m.date >= addDays(latestDate, -1) && m.date <= latestDate,
+    ),
+  );
+  const priorTags = [...new Set(flagged.flatMap((f) => f.tags))];
+  // Name the most recent offender — that is the one still in the system.
+  const culpritDate = flagged.map((f) => f.date).sort().at(-1) ?? null;
+  const overnightGain =
+    latest && previous && latest.date === addDays(previous.date, 1)
+      ? latest.weightLbs - previous.weightLbs
+      : null;
+  const showBanner =
+    overnightGain !== null &&
+    overnightGain >= 0.8 &&
+    priorTags.length > 0 &&
+    culpritDate !== null;
+
   return (
     <Shell user={user} title="Weight">
+      {showBanner && (
+        <WaterWeightBanner
+          gainLbs={fromLbs(overnightGain, units)}
+          units={units}
+          tags={priorTags}
+          onDate={culpritDate!}
+        />
+      )}
       {latest ? (
         <section className="mt-6" aria-label="Current reading">
           <div className="flex items-end justify-between gap-4">
@@ -131,7 +186,11 @@ export default async function WeightPage() {
       <section className="mt-8" aria-label="Weight over time">
         <h2 className="eyebrow">Morning weight over time</h2>
         <WeightChart
-          points={entries.map((e) => ({ date: e.date, weightLbs: e.weightLbs }))}
+          points={entries.map((e) => ({
+            date: e.date,
+            weightLbs: e.weightLbs,
+            trendLbs: trendByDate.get(e.date) ?? null,
+          }))}
           goalLbs={goalWeightLbs}
           units={units}
         />

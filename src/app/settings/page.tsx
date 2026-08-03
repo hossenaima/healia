@@ -16,12 +16,15 @@ export default async function SettingsPage() {
   return (
     <Shell user={user} title="Settings">
       <section className="mt-6">
-        <h2 className="eyebrow">Goal</h2>
+        <h2 className="eyebrow">Goal &amp; targets</h2>
         <GoalForm
           units={units}
           goalWeight={display(user.goalWeightLbs, units)}
           startWeight={display(user.startWeightLbs, units)}
           heightInches={user.heightInches}
+          calorieTarget={user.calorieTarget}
+          proteinTargetG={user.proteinTargetG}
+          fiberTargetG={user.fiberTargetG}
         />
       </section>
 

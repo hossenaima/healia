@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/", label: "Weight" },
   { href: "/meals", label: "Meals" },
+  { href: "/eat", label: "Eat" },
   { href: "/settings", label: "Settings" },
 ];
 
@@ -20,9 +21,9 @@ export function Nav() {
     <nav
       aria-label="Sections"
       className="
-        fixed inset-x-0 bottom-0 z-20 border-t border-rule bg-surface
+        glass fixed inset-x-0 bottom-0 z-20 !rounded-none
         pb-[env(safe-area-inset-bottom)]
-        md:static md:border-t-0 md:border-b md:bg-transparent md:pb-0
+        md:static md:!bg-transparent md:!shadow-none md:!backdrop-blur-none md:pb-0 md:before:hidden
       "
     >
       <ul className="mx-auto flex max-w-2xl md:gap-1 md:px-6">

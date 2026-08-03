@@ -1,4 +1,5 @@
-import { macroEnergyShares, type Macros } from "@/lib/meals";
+import { macroEnergyShares } from "@/lib/meals";
+import type { Nutrition } from "@/lib/nutrition";
 
 const PARTS = [
   { key: "protein", label: "Protein", grams: "proteinG", color: "var(--protein)" },
@@ -15,7 +16,7 @@ export function MacroBar({
   macros,
   size = "full",
 }: {
-  macros: Macros;
+  macros: Nutrition;
   /** "compact" drops the labels for use inside a meal row. */
   size?: "full" | "compact";
 }) {

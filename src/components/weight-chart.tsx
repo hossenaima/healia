@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import {
   Area,
-  AreaChart,
   CartesianGrid,
+  ComposedChart,
+  Line,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -14,7 +15,12 @@ import {
 import { dayKeyToDate, formatDayShort } from "@/lib/dates";
 import { fromLbs, type Units } from "@/lib/units";
 
-export type ChartPoint = { date: string; weightLbs: number };
+export type ChartPoint = {
+  date: string;
+  weightLbs: number;
+  /** Rolling mean in pounds, or null before enough days exist. */
+  trendLbs: number | null;
+};
 
 const RANGES = [
   { key: "30", label: "30d", days: 30 },
@@ -49,6 +55,7 @@ export function WeightChart({
         date: p.date,
         t: dayKeyToDate(p.date).getTime(),
         weight: round1(fromLbs(p.weightLbs, units)),
+        trend: p.trendLbs === null ? null : round1(fromLbs(p.trendLbs, units)),
       })),
     [points, units],
   );
@@ -64,7 +71,9 @@ export function WeightChart({
     return windowed.length >= 2 ? windowed : all;
   }, [all, range]);
 
-  const weights = data.map((d) => d.weight);
+  const weights = data.flatMap((d) =>
+    d.trend === null ? [d.weight] : [d.weight, d.trend],
+  );
   const lo = weights.length ? Math.min(...weights) : (goal ?? 150) - 5;
   const hi = weights.length ? Math.max(...weights) : (goal ?? 150) + 5;
 
@@ -91,9 +100,16 @@ export function WeightChart({
           <span className="flex items-center gap-1.5">
             <span
               aria-hidden
-              className="inline-block h-0.5 w-4 rounded-full bg-trace"
+              className="inline-block h-[3px] w-4 rounded-full bg-trace"
             />
-            Morning weight
+            7-day average
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-block size-1.5 rounded-full bg-trace opacity-55"
+            />
+            Daily
           </span>
           {goalInFrame && (
             <span className="flex items-center gap-1.5">
@@ -139,7 +155,7 @@ export function WeightChart({
 
       <div className="relative mt-2">
         <ResponsiveContainer width="100%" height={230}>
-          <AreaChart
+          <ComposedChart
             data={data}
             margin={{ top: 10, right: 8, bottom: 0, left: -16 }}
           >
@@ -203,15 +219,22 @@ export function WeightChart({
               />
             )}
 
+            {/* Daily readings: the noise. Drawn faintly so they read as
+                scatter around the trend rather than as the signal itself. */}
             <Area
               type="monotone"
               dataKey="weight"
               baseValue={base}
               stroke="var(--trace)"
-              strokeWidth={2}
+              strokeOpacity={0.35}
+              strokeWidth={1.25}
               fill="url(#traceFill)"
               isAnimationActive={false}
-              dot={data.length <= 14 ? { r: 2.5, fill: "var(--trace)" } : false}
+              dot={
+                data.length <= 45
+                  ? { r: 2, fill: "var(--trace)", fillOpacity: 0.55 }
+                  : false
+              }
               activeDot={{
                 r: 5,
                 fill: "var(--trace)",
@@ -219,7 +242,20 @@ export function WeightChart({
                 strokeWidth: 2,
               }}
             />
-          </AreaChart>
+
+            {/* The 7-day mean: what the scale is actually doing once water
+                weight is averaged out. This is the line to read. */}
+            <Line
+              type="monotone"
+              dataKey="trend"
+              stroke="var(--trace)"
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={false}
+              isAnimationActive={false}
+              connectNulls
+            />
+          </ComposedChart>
         </ResponsiveContainer>
 
         {empty && (
@@ -248,7 +284,7 @@ function ReadingTooltip({
   goal,
 }: {
   active?: boolean;
-  payload?: Array<{ payload: { date: string; weight: number } }>;
+  payload?: Array<{ payload: { date: string; weight: number; trend: number | null } }>;
   units: Units;
   goal: number | null;
 }) {
@@ -262,6 +298,11 @@ function ReadingTooltip({
       <p className="tnum mt-0.5 text-base font-medium">
         {point.weight.toFixed(1)} {units}
       </p>
+      {point.trend !== null && (
+        <p className="tnum mt-0.5 text-xs text-ink-muted">
+          7-day avg {point.trend.toFixed(1)} {units}
+        </p>
+      )}
       {toGo !== null && (
         <p className="tnum mt-0.5 text-xs text-ink-muted">
           {toGo > 0 ? `${toGo.toFixed(1)} ${units} to goal` : "at or past goal"}

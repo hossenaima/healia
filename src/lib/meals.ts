@@ -12,37 +12,6 @@ export function suggestMealName(hour: number): string {
   return "Snack";
 }
 
-type ItemLike = {
-  calories: number | null;
-  proteinG: number | null;
-  carbsG: number | null;
-  fatG: number | null;
-};
-
-export function sumCalories(items: ItemLike[]): number {
-  return items.reduce((total, item) => total + (item.calories ?? 0), 0);
-}
-
-export function sumMacros(items: ItemLike[]): Macros {
-  return items.reduce<Macros>(
-    (total, item) => ({
-      proteinG: total.proteinG + (item.proteinG ?? 0),
-      carbsG: total.carbsG + (item.carbsG ?? 0),
-      fatG: total.fatG + (item.fatG ?? 0),
-    }),
-    { proteinG: 0, carbsG: 0, fatG: 0 },
-  );
-}
-
-export function hasMacros(macros: Macros): boolean {
-  return macros.proteinG + macros.carbsG + macros.fatG > 0;
-}
-
-/**
- * Share of calories from each macro — 4 kcal per gram of protein and carbs,
- * 9 per gram of fat. Computed from calories rather than grams so the bar
- * reflects where the energy actually came from.
- */
 export function macroEnergyShares(macros: Macros) {
   const protein = macros.proteinG * 4;
   const carbs = macros.carbsG * 4;

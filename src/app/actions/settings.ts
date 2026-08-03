@@ -19,6 +19,9 @@ const settingsSchema = z.object({
   goalWeight: optionalNumber,
   startWeight: optionalNumber,
   heightInches: optionalNumber,
+  calorieTarget: optionalNumber,
+  proteinTargetG: optionalNumber,
+  fiberTargetG: optionalNumber,
 });
 
 export async function saveSettingsAction(
@@ -32,13 +35,24 @@ export async function saveSettingsAction(
     goalWeight: formData.get("goalWeight") ?? "",
     startWeight: formData.get("startWeight") ?? "",
     heightInches: formData.get("heightInches") ?? "",
+    calorieTarget: formData.get("calorieTarget") ?? "",
+    proteinTargetG: formData.get("proteinTargetG") ?? "",
+    fiberTargetG: formData.get("fiberTargetG") ?? "",
   });
 
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0].message };
   }
 
-  const { units, goalWeight, startWeight, heightInches } = parsed.data;
+  const {
+    units,
+    goalWeight,
+    startWeight,
+    heightInches,
+    calorieTarget,
+    proteinTargetG,
+    fiberTargetG,
+  } = parsed.data;
 
   // Goal and start weights are typed in the unit selected on this same form, so
   // they convert against the incoming unit rather than the previously saved one.
@@ -49,10 +63,15 @@ export async function saveSettingsAction(
       goalWeightLbs: goalWeight === null ? null : toLbs(goalWeight, units),
       startWeightLbs: startWeight === null ? null : toLbs(startWeight, units),
       heightInches,
+      calorieTarget: calorieTarget === null ? null : Math.round(calorieTarget),
+      proteinTargetG: proteinTargetG === null ? null : Math.round(proteinTargetG),
+      fiberTargetG: fiberTargetG === null ? null : Math.round(fiberTargetG),
     },
   });
 
   revalidatePath("/");
+  revalidatePath("/meals");
+  revalidatePath("/eat");
   revalidatePath("/settings");
   return { ok: true, message: "Saved." };
 }

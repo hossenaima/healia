@@ -26,6 +26,9 @@ export type SessionUser = {
   startWeightLbs: number | null;
   heightInches: number | null;
   units: Units;
+  calorieTarget: number | null;
+  proteinTargetG: number | null;
+  fiberTargetG: number | null;
 };
 
 // --- PIN hashing -----------------------------------------------------------
@@ -88,6 +91,9 @@ export async function currentUser(): Promise<SessionUser | null> {
     startWeightLbs: user.startWeightLbs,
     heightInches: user.heightInches,
     units: user.units === "kg" ? "kg" : "lb",
+    calorieTarget: user.calorieTarget,
+    proteinTargetG: user.proteinTargetG,
+    fiberTargetG: user.fiberTargetG,
   };
 }
 

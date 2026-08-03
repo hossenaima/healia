@@ -18,6 +18,7 @@ export function MealForm({
   const [name, setName] = useState(() => suggestMealName(new Date().getHours()));
   const [note, setNote] = useState("");
   const [showMacros, setShowMacros] = useState(false);
+  const [portion, setPortion] = useState("1");
 
   // Which button was pressed decides whether the description goes to the
   // estimator; a hidden field carries that through the action.
@@ -29,6 +30,7 @@ export function MealForm({
         formAction(formData);
         setNote("");
         setName(suggestMealName(new Date().getHours()));
+        setPortion("1");
       }}
       className="card mt-4 p-5"
     >
@@ -102,8 +104,55 @@ export function MealForm({
           <GramField id="protein" label="Protein" tint="var(--protein)" />
           <GramField id="carbs" label="Carbs" tint="var(--carbs)" />
           <GramField id="fat" label="Fat" tint="var(--fat)" />
+          <GramField id="fiber" label="Fiber" tint="var(--carbs)" />
+          <GramField id="sodium" label="Sodium (mg)" tint="var(--fat)" />
         </div>
       )}
+
+      <div className="mt-5 space-y-3 border-t border-rule pt-4">
+        <div>
+          <label htmlFor="portion" className="eyebrow block">
+            How much of it you ate
+          </label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {PORTIONS.map((p) => (
+              <label
+                key={p.value}
+                className={`
+                  cursor-pointer rounded-full px-3 py-1.5 font-cond text-xs
+                  font-semibold uppercase tracking-widest transition-colors
+                  ${
+                    portion === p.value
+                      ? "bg-ink text-ground"
+                      : "bg-surface-sunk text-ink-muted hover:text-ink"
+                  }
+                `}
+              >
+                <input
+                  type="radio"
+                  name="portion"
+                  value={p.value}
+                  checked={portion === p.value}
+                  onChange={() => setPortion(p.value)}
+                  className="sr-only"
+                />
+                {p.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <Check
+          name="brothLeft"
+          label="Left the broth behind"
+          hint="Takes 18% off — most of a soup's fat and sodium is in the liquid."
+        />
+        <Check
+          name="exact"
+          label="Read off a label"
+          hint="Marks it exact instead of showing an estimate range."
+        />
+      </div>
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row">
         <button
@@ -154,6 +203,38 @@ export function MealForm({
         {state.error ?? (state.ok ? (state.note ?? "Logged.") : "")}
       </p>
     </form>
+  );
+}
+
+const PORTIONS = [
+  { value: "1", label: "All" },
+  { value: "0.5", label: "Half" },
+  { value: "0.33", label: "A third" },
+  { value: "0.25", label: "A quarter" },
+  { value: "0.2", label: "A fifth" },
+];
+
+function Check({
+  name,
+  label,
+  hint,
+}: {
+  name: string;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+      <input
+        type="checkbox"
+        name={name}
+        className="mt-0.5 size-4 shrink-0 accent-[var(--trace)]"
+      />
+      <span>
+        {label}
+        <span className="block text-xs text-ink-muted">{hint}</span>
+      </span>
+    </label>
   );
 }
 

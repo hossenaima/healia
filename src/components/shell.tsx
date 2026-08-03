@@ -13,7 +13,7 @@ export function Shell({
 }) {
   return (
     <>
-      <header className="bg-surface/80 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">
+      <header className="sticky top-0 z-20 glass !rounded-none !shadow-none md:bg-transparent md:backdrop-blur-none">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-5 py-4 md:px-6">
           <span className="font-cond text-lg font-bold tracking-tight">
             Healia

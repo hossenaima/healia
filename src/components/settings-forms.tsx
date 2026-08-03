@@ -15,11 +15,17 @@ export function GoalForm({
   goalWeight,
   startWeight,
   heightInches,
+  calorieTarget,
+  proteinTargetG,
+  fiberTargetG,
 }: {
   units: Units;
   goalWeight: number | null;
   startWeight: number | null;
   heightInches: number | null;
+  calorieTarget: number | null;
+  proteinTargetG: number | null;
+  fiberTargetG: number | null;
 }) {
   const [state, formAction, pending] = useActionState(
     saveSettingsAction,
@@ -78,6 +84,34 @@ export function GoalForm({
         label="Height (inches)"
         defaultValue={heightInches}
       />
+
+      <div className="mt-7 border-t border-rule pt-5">
+        <p className="eyebrow">Daily targets</p>
+        <p className="mt-1 text-xs text-ink-muted">
+          Drives your remaining-calorie budget, the progress bars, and what
+          &ldquo;What can I eat?&rdquo; suggests. Left blank, those stay hidden
+          rather than guessing a number for you.
+        </p>
+
+        <NumberField
+          id="calorieTarget"
+          name="calorieTarget"
+          label="Calories"
+          defaultValue={calorieTarget}
+        />
+        <NumberField
+          id="proteinTargetG"
+          name="proteinTargetG"
+          label="Protein (g)"
+          defaultValue={proteinTargetG}
+        />
+        <NumberField
+          id="fiberTargetG"
+          name="fiberTargetG"
+          label="Fiber (g)"
+          defaultValue={fiberTargetG}
+        />
+      </div>
 
       <button
         type="submit"

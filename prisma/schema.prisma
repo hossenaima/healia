@@ -35,8 +35,16 @@ model User {
   heightInches   Float?
   units          String @default("lb") // "lb" | "kg"
 
+  /// Daily targets, set by hand. Deliberately not derived from height and
+  /// weight: population formulas can be off by hundreds of calories, and a
+  /// wrong number here would quietly skew every budget in the app.
+  calorieTarget  Int?
+  proteinTargetG Int?
+  fiberTargetG   Int?
+
   weightEntries WeightEntry[]
   meals         Meal[]
+  dayLogs       DayLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,6 +67,25 @@ model WeightEntry {
   @@index([userId, date])
 }
 
+/// Per-day facts that are not a weigh-in and not a meal.
+model DayLog {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// "YYYY-MM-DD" local day.
+  date String
+  /// Calories burned through activity, entered by hand. Subtracted from intake
+  /// to give net calories.
+  activeBurnKcal Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
 model Meal {
   id     String @id @default(cuid())
   userId String
@@ -71,6 +98,14 @@ model Meal {
   name String @default("Meal")
   /// What the user typed, verbatim, before any AI parsing.
   note String @default("")
+
+  /// Fraction of the dish actually eaten — 0.2 for a fifth of a shared plate.
+  /// Multiplies every item's figures at read time rather than being baked in,
+  /// so the underlying estimate stays intact if the share is corrected later.
+  portion Float @default(1)
+  /// Soup and ramen broth left in the bowl. Applies a fixed reduction, since
+  /// the broth carries much of the fat and sodium but little of the volume.
+  brothLeft Boolean @default(false)
 
   items MealItem[]
 
@@ -91,8 +126,13 @@ model MealItem {
   proteinG Float?
   carbsG   Float?
   fatG     Float?
+  fiberG   Float?
+  sodiumMg Float?
   /// "manual" | "ai" — lets the UI flag estimates the user has not confirmed.
   source   String  @default("manual")
+  /// "exact" for a packaged item read off a label, "estimated" for anything
+  /// whose oil, sauce or portion the kitchen decided. Drives the ± range shown.
+  precision String @default("estimated")
 
   createdAt DateTime @default(now())
 

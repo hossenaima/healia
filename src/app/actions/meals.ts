@@ -21,6 +21,11 @@ const mealSchema = z.object({
   date: z.string().refine(isDayKey, "Not a valid date."),
   name: z.string().trim().min(1, "Give the meal a name.").max(60),
   note: z.string().trim().min(1, "Describe what you ate.").max(2000),
+  portion: z.coerce
+    .number()
+    .gt(0, "Portion must be more than zero.")
+    .max(1, "Portion is the share you ate, so at most 1."),
+  brothLeft: z.boolean(),
 });
 
 /**
@@ -37,13 +42,15 @@ export async function saveMealAction(
     date: formData.get("date"),
     name: formData.get("name"),
     note: formData.get("note"),
+    portion: formData.get("portion") || 1,
+    brothLeft: formData.get("brothLeft") === "on",
   });
 
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0].message };
   }
 
-  const { date, name, note } = parsed.data;
+  const { date, name, note, portion, brothLeft } = parsed.data;
   const useAi = formData.get("estimate") === "1";
   const manualCalories = formData.get("calories");
 
@@ -84,6 +91,10 @@ export async function saveMealAction(
         proteinG: optionalGrams(formData.get("protein")),
         carbsG: optionalGrams(formData.get("carbs")),
         fatG: optionalGrams(formData.get("fat")),
+        fiberG: optionalGrams(formData.get("fiber")),
+        sodiumMg: optionalGrams(formData.get("sodium")),
+        // Typed by hand off a label is the one case the user can vouch for.
+        precision: formData.get("exact") === "on" ? "exact" : "estimated",
       },
     ];
   }
@@ -94,6 +105,8 @@ export async function saveMealAction(
       date,
       name,
       note,
+      portion,
+      brothLeft,
       items: {
         create: items.map((item) => ({
           name: item.name,
@@ -102,6 +115,9 @@ export async function saveMealAction(
           proteinG: item.proteinG,
           carbsG: item.carbsG,
           fatG: item.fatG,
+          fiberG: item.fiberG,
+          sodiumMg: item.sodiumMg,
+          precision: item.precision,
           source: useAi ? "ai" : "manual",
         })),
       },
@@ -110,6 +126,32 @@ export async function saveMealAction(
 
   revalidatePath("/meals");
   return { ok: true, note: aiNote };
+}
+
+/** Active burn for a day, typed by hand on the meals page. */
+export async function saveActiveBurnAction(formData: FormData) {
+  const user = await requireUser();
+
+  const date = String(formData.get("date") ?? "");
+  if (!isDayKey(date)) return;
+
+  const raw = String(formData.get("activeBurn") ?? "").trim();
+  const value = raw === "" ? null : Number(raw);
+  if (value !== null && (!Number.isFinite(value) || value < 0 || value > 10000)) {
+    return;
+  }
+
+  await prisma.dayLog.upsert({
+    where: { userId_date: { userId: user.id, date } },
+    update: { activeBurnKcal: value === null ? null : Math.round(value) },
+    create: {
+      userId: user.id,
+      date,
+      activeBurnKcal: value === null ? null : Math.round(value),
+    },
+  });
+
+  revalidatePath("/meals");
 }
 
 export async function deleteMealAction(formData: FormData) {

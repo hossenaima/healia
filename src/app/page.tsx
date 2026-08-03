@@ -55,7 +55,7 @@ export default async function WeightPage() {
       : null;
 
   return (
-    <Shell user={user} eyebrow="Section 01 — Readings" title="Weight">
+    <Shell user={user} title="Weight">
       {latest ? (
         <section className="mt-6" aria-label="Current reading">
           <div className="flex items-end justify-between gap-4">
@@ -98,7 +98,7 @@ export default async function WeightPage() {
           <dl className="mt-5 grid grid-cols-3 gap-3">
             <Stat label="Since last" deltaLbs={sinceLast} units={units} />
             <Stat label="Since start" deltaLbs={sinceStart} units={units} />
-            <div className="rounded-lg border border-rule bg-surface px-3 py-3">
+            <div className="card px-3 py-3">
               <dt className="eyebrow">Left to go</dt>
               <dd className="tnum mt-1 whitespace-nowrap text-sm font-medium sm:text-lg">
                 {toGoal === null
@@ -128,19 +128,14 @@ export default async function WeightPage() {
         units={units}
       />
 
-      {entries.length >= 2 && (
-        <section className="mt-10" aria-label="Weight over time">
-          <h2 className="eyebrow">Morning weight over time</h2>
-          <WeightChart
-            points={entries.map((e) => ({
-              date: e.date,
-              weightLbs: e.weightLbs,
-            }))}
-            goalLbs={goalWeightLbs}
-            units={units}
-          />
-        </section>
-      )}
+      <section className="mt-8" aria-label="Weight over time">
+        <h2 className="eyebrow">Morning weight over time</h2>
+        <WeightChart
+          points={entries.map((e) => ({ date: e.date, weightLbs: e.weightLbs }))}
+          goalLbs={goalWeightLbs}
+          units={units}
+        />
+      </section>
 
       {entries.length > 0 && (
         <section className="mt-10" aria-label="Logged weigh-ins">
@@ -154,7 +149,7 @@ export default async function WeightPage() {
             </Link>
           </div>
 
-          <ul className="mt-3 divide-y divide-rule rounded-xl border border-rule bg-surface">
+          <ul className="card mt-3 divide-y divide-rule">
             {[...entries]
               .reverse()
               .slice(0, 30)
@@ -218,7 +213,7 @@ function Stat({
   units: Units;
 }) {
   return (
-    <div className="rounded-lg border border-rule bg-surface px-3 py-3">
+    <div className="card px-3 py-3">
       <dt className="eyebrow">{label}</dt>
       <dd className="tnum mt-1 whitespace-nowrap text-sm font-medium sm:text-lg">
         {deltaLbs === null ? "—" : <DeltaText deltaLbs={deltaLbs} units={units} />}

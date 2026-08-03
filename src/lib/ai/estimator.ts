@@ -55,6 +55,10 @@ Break the description into individual food items. For each item, give your best
 estimate of calories and macros for the portion described. If no portion is
 given, assume a typical single serving and say so in the note.
 
+Always fill in protein, carbs, and fat — the app charts the macro split, so a
+null there leaves a gap. Use 0 only when the food genuinely contains none of
+that macro (black coffee has no fat; olive oil has no carbs).
+
 Calories are whole numbers. Macros are in grams. Never invent items the user did
 not mention. If the text describes no food at all, return an empty items list
 and explain why in the note.`;

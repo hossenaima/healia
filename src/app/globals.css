@@ -3,51 +3,72 @@
 /*
  * Healia — "the morning instrument"
  *
- * The app is a daily readings log, so it is built like an instrument panel
- * rather than a coaching app: one superfamily (IBM Plex) differentiated by
- * width and weight, numerals always mono and tabular so figures line up down a
- * column, and exactly two chart hues — a teal trace descending toward a plum
- * goal horizon. Both hues are validated for CVD separation in both modes.
+ * A daily readings log built like an instrument panel rather than a coaching
+ * app: one superfamily (IBM Plex) differentiated by width and weight, numerals
+ * always mono and tabular so figures line up down a column, and a two-hue
+ * chart — a teal trace descending toward a plum goal horizon.
+ *
+ * Light-first. Surfaces are white and separated by air and soft elevation
+ * rather than borders, so the figures carry the page. Every chart hue is
+ * validated for CVD separation against its own surface in both modes.
  */
 
 :root {
-  --ground: #f1f4f3; /* pale cool mint-grey page */
+  color-scheme: light;
+
+  --ground: #f7f9f9; /* near-white, a breath cooler than paper */
   --surface: #ffffff;
-  --surface-sunk: #e8edec;
-  --ink: #14232b; /* deep petrol */
-  --ink-muted: #556670;
-  --ink-faint: #8b9aa2;
-  --rule: #d6dedc;
+  --surface-sunk: #eef2f2;
+  --ink: #16262e; /* deep petrol */
+  --ink-muted: #5c6d76;
+  --ink-faint: #97a5ac;
+  --rule: #e6ecec;
 
   --trace: #00907f; /* weight line */
-  --trace-soft: #00907f1f;
   --goal: #9a3ba0; /* goal horizon */
 
   --down: #2f6f45; /* moving toward goal */
   --up: #a2472c; /* moving away */
 
-  --focus: #14232b;
+  /* Macro breakdown. Paired with gram labels, never carrying meaning alone. */
+  --protein: #2a5fd6;
+  --carbs: #c77a0a;
+  --fat: #a34a63;
+
+  --focus: #00907f;
+  --lift: 0 1px 2px rgb(22 38 46 / 0.04), 0 4px 16px rgb(22 38 46 / 0.05);
+  --lift-sm: 0 1px 2px rgb(22 38 46 / 0.05);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #0c1817;
-    --surface: #101e1d;
-    --surface-sunk: #162725;
-    --ink: #e6efec;
-    --ink-muted: #9fb3ae;
-    --ink-faint: #6d827e;
-    --rule: #22403c;
+/*
+ * Light is the designed-for case and the only theme that applies on its own.
+ * The dark values stay available behind an explicit opt-in, so a phone set to
+ * dark still gets the intended light look until someone asks for otherwise.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
 
-    --trace: #12ad94;
-    --trace-soft: #12ad9429;
-    --goal: #be6fc9;
+  --ground: #0e1619;
+  --surface: #141c20;
+  --surface-sunk: #1b262a;
+  --ink: #e8efee;
+  --ink-muted: #a2b2b6;
+  --ink-faint: #71848a;
+  --rule: #24343a;
 
-    --down: #63c187;
-    --up: #e08a6a;
+  --trace: #12ad94;
+  --goal: #be6fc9;
 
-    --focus: #e6efec;
-  }
+  --down: #63c187;
+  --up: #e08a6a;
+
+  --protein: #5a8ce6;
+  --carbs: #c0871f;
+  --fat: #be6480;
+
+  --focus: #12ad94;
+  --lift: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
+  --lift-sm: 0 1px 2px rgb(0 0 0 / 0.3);
 }
 
 @theme inline {
@@ -60,6 +81,9 @@
   --color-rule: var(--rule);
   --color-trace: var(--trace);
   --color-goal: var(--goal);
+  --color-protein: var(--protein);
+  --color-carbs: var(--carbs);
+  --color-fat: var(--fat);
   --color-down: var(--down);
   --color-up: var(--up);
 
@@ -84,6 +108,8 @@ body {
 
 /* Small structural labels: the instrument-panel voice. */
 .eyebrow {
+  /* Block by default: an inline <label> collides with the input beneath it. */
+  display: block;
   font-family: var(--font-plex-cond), var(--font-plex-sans), sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -108,6 +134,12 @@ body {
     opacity: 1;
     transform: none;
   }
+}
+
+.card {
+  background: var(--surface);
+  border-radius: 0.875rem;
+  box-shadow: var(--lift);
 }
 
 .settle {

@@ -10,7 +10,6 @@ import {
   getEstimator,
   type EstimatedItem,
 } from "@/lib/ai/estimator";
-import { MEAL_SLOTS } from "@/lib/meals";
 
 export type MealActionResult = {
   ok: boolean;
@@ -20,14 +19,13 @@ export type MealActionResult = {
 
 const mealSchema = z.object({
   date: z.string().refine(isDayKey, "Not a valid date."),
-  slot: z.enum(MEAL_SLOTS),
+  name: z.string().trim().min(1, "Give the meal a name.").max(60),
   note: z.string().trim().min(1, "Describe what you ate.").max(2000),
 });
 
 /**
- * Saves a meal. When `estimate` is set the description is sent to the estimator
- * and the returned items are stored; otherwise the meal is saved with whatever
- * calorie figure the user typed.
+ * Saves a meal. A day holds as many meals as the user logs — there is no fixed
+ * set of slots, so this always creates rather than replacing anything.
  */
 export async function saveMealAction(
   _prev: MealActionResult,
@@ -37,7 +35,7 @@ export async function saveMealAction(
 
   const parsed = mealSchema.safeParse({
     date: formData.get("date"),
-    slot: formData.get("slot"),
+    name: formData.get("name"),
     note: formData.get("note"),
   });
 
@@ -45,7 +43,7 @@ export async function saveMealAction(
     return { ok: false, error: parsed.error.issues[0].message };
   }
 
-  const { date, slot, note } = parsed.data;
+  const { date, name, note } = parsed.data;
   const useAi = formData.get("estimate") === "1";
   const manualCalories = formData.get("calories");
 
@@ -73,30 +71,28 @@ export async function saveMealAction(
           "Estimation failed. Save it with a calorie number instead, or try again.",
       };
     }
-  } else {
+  } else if (manualCalories !== null && String(manualCalories).trim() !== "") {
     const calories = Number(manualCalories);
-    if (manualCalories !== null && String(manualCalories).trim() !== "") {
-      if (!Number.isFinite(calories) || calories < 0) {
-        return { ok: false, error: "Calories must be a number." };
-      }
-      items = [
-        {
-          name: note.slice(0, 200),
-          quantity: null,
-          calories: Math.round(calories),
-          proteinG: null,
-          carbsG: null,
-          fatG: null,
-        },
-      ];
+    if (!Number.isFinite(calories) || calories < 0) {
+      return { ok: false, error: "Calories must be a number." };
     }
+    items = [
+      {
+        name: note.slice(0, 200),
+        quantity: null,
+        calories: Math.round(calories),
+        proteinG: optionalGrams(formData.get("protein")),
+        carbsG: optionalGrams(formData.get("carbs")),
+        fatG: optionalGrams(formData.get("fat")),
+      },
+    ];
   }
 
   await prisma.meal.create({
     data: {
       userId: user.id,
       date,
-      slot,
+      name,
       note,
       items: {
         create: items.map((item) => ({
@@ -138,4 +134,12 @@ export async function deleteMealItemAction(formData: FormData) {
     where: { id, meal: { userId: user.id } },
   });
   revalidatePath("/meals");
+}
+
+function optionalGrams(value: FormDataEntryValue | null): number | null {
+  if (value === null || String(value).trim() === "") return null;
+  const grams = Number(value);
+  return Number.isFinite(grams) && grams >= 0
+    ? Math.round(grams * 10) / 10
+    : null;
 }

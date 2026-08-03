@@ -10,7 +10,7 @@ export default async function BackfillPage() {
   if (!user) redirect("/login");
 
   return (
-    <Shell user={user} eyebrow="Section 01 — Readings" title="Add past entries">
+    <Shell user={user} title="Add past entries">
       <p className="mt-4 text-sm text-ink-muted">
         Bring in weigh-ins from before you started here. A date that already has
         an entry is overwritten, so importing twice is safe.

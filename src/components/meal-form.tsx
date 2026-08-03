@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useState } from "react";
 import { saveMealAction, type MealActionResult } from "@/app/actions/meals";
-import { MEAL_SLOTS, SLOT_LABELS, slotForHour } from "@/lib/meals";
+import { suggestMealName } from "@/lib/meals";
 
 const INITIAL: MealActionResult = { ok: false };
 
@@ -15,9 +15,9 @@ export function MealForm({
   aiEnabled: boolean;
 }) {
   const [state, formAction, pending] = useActionState(saveMealAction, INITIAL);
-  const [slot, setSlot] = useState<string>(slotForHour(new Date().getHours()));
+  const [name, setName] = useState(() => suggestMealName(new Date().getHours()));
   const [note, setNote] = useState("");
-  const formRef = useRef<HTMLFormElement>(null);
+  const [showMacros, setShowMacros] = useState(false);
 
   // Which button was pressed decides whether the description goes to the
   // estimator; a hidden field carries that through the action.
@@ -25,46 +25,32 @@ export function MealForm({
 
   return (
     <form
-      ref={formRef}
       action={(formData) => {
         formAction(formData);
         setNote("");
+        setName(suggestMealName(new Date().getHours()));
       }}
-      className="mt-5 rounded-xl border border-rule bg-surface p-5"
+      className="card mt-4 p-5"
     >
       <input type="hidden" name="date" value={date} />
       <input type="hidden" name="estimate" value={useAi} />
 
-      <fieldset>
-        <legend className="eyebrow">Meal</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {MEAL_SLOTS.map((option) => (
-            <label
-              key={option}
-              className={`
-                cursor-pointer rounded-full border px-3 py-1.5 font-cond text-xs
-                font-semibold uppercase tracking-widest transition-colors
-                ${
-                  slot === option
-                    ? "border-ink bg-ink text-ground"
-                    : "border-rule text-ink-muted hover:border-ink-faint"
-                }
-              `}
-            >
-              <input
-                type="radio"
-                name="slot"
-                value={option}
-                checked={slot === option}
-                onChange={() => setSlot(option)}
-                className="sr-only"
-              />
-              {SLOT_LABELS[option]}
-
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <label htmlFor="name" className="eyebrow block">
+        Meal
+      </label>
+      <input
+        id="name"
+        name="name"
+        type="text"
+        maxLength={60}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Name it anything"
+        className="
+          mt-2 w-full border-b border-rule bg-transparent pb-1 text-lg
+          placeholder:text-ink-faint focus:border-trace focus:outline-none
+        "
+      />
 
       <label htmlFor="note" className="eyebrow mt-5 block">
         What you ate
@@ -77,36 +63,57 @@ export function MealForm({
         onChange={(e) => setNote(e.target.value)}
         placeholder="Two eggs, sourdough toast with butter, black coffee"
         className="
-          mt-2 w-full rounded-lg border border-rule bg-transparent p-3 text-sm
-          placeholder:text-ink-faint focus:border-trace focus:outline-none
+          mt-2 w-full rounded-lg bg-surface-sunk p-3 text-sm
+          placeholder:text-ink-faint focus:outline-2 focus:outline-trace
         "
       />
 
-      <label htmlFor="calories" className="eyebrow mt-4 block">
-        Calories (optional)
-      </label>
-      <input
-        id="calories"
-        name="calories"
-        type="text"
-        inputMode="numeric"
-        autoComplete="off"
-        placeholder="—"
-        className="
-          tnum mt-2 w-32 border-b border-rule bg-transparent pb-1 text-lg
-          placeholder:text-ink-faint focus:border-trace focus:outline-none
-        "
-      />
+      <div className="mt-4 flex flex-wrap items-end gap-x-5 gap-y-3">
+        <div>
+          <label htmlFor="calories" className="eyebrow block">
+            Calories
+          </label>
+          <input
+            id="calories"
+            name="calories"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="—"
+            className="
+              tnum mt-1.5 w-24 border-b border-rule bg-transparent pb-1 text-lg
+              placeholder:text-ink-faint focus:border-trace focus:outline-none
+            "
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowMacros((v) => !v)}
+          aria-expanded={showMacros}
+          className="eyebrow pb-2 transition-colors hover:!text-ink"
+        >
+          {showMacros ? "− Macros" : "+ Macros"}
+        </button>
+      </div>
+
+      {showMacros && (
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
+          <GramField id="protein" label="Protein" tint="var(--protein)" />
+          <GramField id="carbs" label="Carbs" tint="var(--carbs)" />
+          <GramField id="fat" label="Fat" tint="var(--fat)" />
+        </div>
+      )}
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row">
         <button
           type="submit"
           onClick={() => setUseAi("0")}
-          disabled={pending || note.trim() === ""}
+          disabled={pending || note.trim() === "" || name.trim() === ""}
           className="
-            flex-1 rounded-lg border border-ink px-4 py-3 font-cond text-sm
-            font-semibold uppercase tracking-widest transition-colors
-            hover:bg-surface-sunk disabled:opacity-40
+            flex-1 rounded-lg bg-surface-sunk px-4 py-3 font-cond text-sm
+            font-semibold uppercase tracking-widest transition-opacity
+            hover:opacity-80 disabled:opacity-40
           "
         >
           Save meal
@@ -115,7 +122,9 @@ export function MealForm({
         <button
           type="submit"
           onClick={() => setUseAi("1")}
-          disabled={pending || note.trim() === "" || !aiEnabled}
+          disabled={
+            pending || note.trim() === "" || name.trim() === "" || !aiEnabled
+          }
           title={
             aiEnabled
               ? undefined
@@ -127,14 +136,14 @@ export function MealForm({
             hover:opacity-90 disabled:opacity-40
           "
         >
-          {pending && useAi === "1" ? "Estimating" : "Estimate calories"}
+          {pending && useAi === "1" ? "Estimating" : "Estimate for me"}
         </button>
       </div>
 
       {!aiEnabled && (
         <p className="mt-3 text-xs text-ink-muted">
-          Calorie estimation is off. Add an Anthropic API key to your environment
-          to turn it on.
+          Estimation is off. Add an Anthropic API key to your environment to turn
+          it on.
         </p>
       )}
 
@@ -145,5 +154,40 @@ export function MealForm({
         {state.error ?? (state.ok ? (state.note ?? "Logged.") : "")}
       </p>
     </form>
+  );
+}
+
+function GramField({
+  id,
+  label,
+  tint,
+}: {
+  id: string;
+  label: string;
+  tint: string;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="eyebrow !flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className="inline-block size-2 rounded-full"
+          style={{ backgroundColor: tint }}
+        />
+        {label} (g)
+      </label>
+      <input
+        id={id}
+        name={id}
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        placeholder="—"
+        className="
+          tnum mt-1.5 w-20 border-b border-rule bg-transparent pb-1 text-base
+          placeholder:text-ink-faint focus:border-trace focus:outline-none
+        "
+      />
+    </div>
   );
 }

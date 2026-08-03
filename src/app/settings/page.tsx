@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   const aiEnabled = getEstimator().available;
 
   return (
-    <Shell user={user} eyebrow="Section 03 — Configuration" title="Settings">
+    <Shell user={user} title="Settings">
       <section className="mt-6">
         <h2 className="eyebrow">Goal</h2>
         <GoalForm

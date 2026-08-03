@@ -66,8 +66,9 @@ model Meal {
 
   /// "YYYY-MM-DD" local day.
   date String
-  /// "breakfast" | "lunch" | "dinner" | "snack"
-  slot String
+  /// Free text, e.g. "Breakfast", "Post-run snack". There is no fixed set of
+  /// meals — a day holds as many as the user logs.
+  name String @default("Meal")
   /// What the user typed, verbatim, before any AI parsing.
   note String @default("")
 

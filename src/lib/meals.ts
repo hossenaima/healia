@@ -1,18 +1,57 @@
-export const MEAL_SLOTS = ["breakfast", "lunch", "dinner", "snack"] as const;
+export type Macros = { proteinG: number; carbsG: number; fatG: number };
 
-export type MealSlot = (typeof MEAL_SLOTS)[number];
+/**
+ * A starting name based on the clock, so the common case needs no typing.
+ * It is only a suggestion — the field is free text and a day can hold any
+ * number of meals with any names.
+ */
+export function suggestMealName(hour: number): string {
+  if (hour < 11) return "Breakfast";
+  if (hour < 16) return "Lunch";
+  if (hour < 21) return "Dinner";
+  return "Snack";
+}
 
-export const SLOT_LABELS: Record<MealSlot, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  snack: "Snack",
+type ItemLike = {
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
 };
 
-/** Guesses the meal from the clock so the common case needs no tap. */
-export function slotForHour(hour: number): MealSlot {
-  if (hour < 11) return "breakfast";
-  if (hour < 16) return "lunch";
-  if (hour < 21) return "dinner";
-  return "snack";
+export function sumCalories(items: ItemLike[]): number {
+  return items.reduce((total, item) => total + (item.calories ?? 0), 0);
+}
+
+export function sumMacros(items: ItemLike[]): Macros {
+  return items.reduce<Macros>(
+    (total, item) => ({
+      proteinG: total.proteinG + (item.proteinG ?? 0),
+      carbsG: total.carbsG + (item.carbsG ?? 0),
+      fatG: total.fatG + (item.fatG ?? 0),
+    }),
+    { proteinG: 0, carbsG: 0, fatG: 0 },
+  );
+}
+
+export function hasMacros(macros: Macros): boolean {
+  return macros.proteinG + macros.carbsG + macros.fatG > 0;
+}
+
+/**
+ * Share of calories from each macro — 4 kcal per gram of protein and carbs,
+ * 9 per gram of fat. Computed from calories rather than grams so the bar
+ * reflects where the energy actually came from.
+ */
+export function macroEnergyShares(macros: Macros) {
+  const protein = macros.proteinG * 4;
+  const carbs = macros.carbsG * 4;
+  const fat = macros.fatG * 9;
+  const total = protein + carbs + fat;
+  if (total <= 0) return null;
+  return {
+    protein: (protein / total) * 100,
+    carbs: (carbs / total) * 100,
+    fat: (fat / total) * 100,
+  };
 }

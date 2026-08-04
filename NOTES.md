@@ -21,7 +21,7 @@ Live at `git@github.com:hossenaima/helia.git`.
 | Auth | Single PIN per account, signed cookie | No accounts service for an app with two users |
 | AI | Google Gemini (`@google/genai`) | Estimates a meal's calories and macros from plain text; sits behind one interface |
 | Charts | Recharts | |
-| Type | Nunito | Rounded terminals carry the warmth the design is after; one family throughout |
+| Type | Manrope | Geometric and even-width; Nunito read as cartoonish once heavy, which is where the big figures live. Capped at weight 700 |
 | Auth screen visuals | ShaderGradient (three/r3f) | Dynamically imported so the daily pages never load it |
 
 ## Decisions worth remembering
@@ -114,6 +114,12 @@ account's data.
 - A submit button's `name`/`value` is serialised natively by the browser.
   Setting React state in `onClick` to record which button was pressed **races
   the submission** and can send the previous value.
+- **Gemini's structured output has a complexity budget.** A schema that is too
+  rich is rejected outright with "the specified schema produces a constraint
+  that has too many states for serving" — no partial result, no clue which part
+  is at fault. A `maxItems` on a nested array is the worst offender and each
+  nullable field doubles the state count again. Keep response schemas flat and
+  fully required; cap array length in code instead.
 - Prisma 7 uses driver adapters and `prisma.config.ts`; migrations read
   `DIRECT_URL` because the transaction pooler cannot run DDL.
 - Supabase's direct endpoint (`db.<ref>.supabase.co`) is IPv6-only on the free

@@ -137,7 +137,7 @@ export default async function WeightPage() {
             <div className="min-w-0 flex-1">
               {progress !== null && (
                 <>
-                  <p className="tnum text-3xl font-extrabold leading-none">
+                  <p className="tnum text-3xl font-bold leading-none">
                     {progress.toFixed(0)}%
                   </p>
                   <p className="mt-1 text-sm text-ink-muted">of the way there</p>
@@ -282,7 +282,7 @@ function StatTile({
   return (
     <div className="tile p-4">
       <dt className="eyebrow">{label}</dt>
-      <dd className="tnum mt-1 whitespace-nowrap text-xl font-extrabold">
+      <dd className="tnum mt-1 whitespace-nowrap text-xl font-bold">
         {deltaLbs === null ? "—" : <DeltaText deltaLbs={deltaLbs} units={units} />}
       </dd>
     </div>

@@ -173,7 +173,7 @@ export default async function MealsPage(props: PageProps<"/meals">) {
                   )}
 
                   {estimated && (
-                    <p className="eyebrow mt-3">Estimated by Claude</p>
+                    <p className="eyebrow mt-3">Estimated from your description</p>
                   )}
                 </li>
               );

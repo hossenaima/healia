@@ -32,12 +32,12 @@ export default async function SettingsPage() {
         <h2 className="eyebrow">Calorie estimation</h2>
         <div className="mt-4 rounded-xl border border-rule bg-surface p-5">
           <p className="text-sm">
-            {aiEnabled ? "On." : "Off."} Estimation runs through Claude using
-            the key in your server environment.
+            {aiEnabled ? "On." : "Off."} Estimation runs through Gemini using the
+            key in your server environment.
           </p>
           {!aiEnabled && (
             <p className="mt-2 text-sm text-ink-muted">
-              Set <code className="tnum text-xs">ANTHROPIC_API_KEY</code> where
+              Set <code className="tnum text-xs">GEMINI_API_KEY</code> where
               the app is hosted, then restart it.
             </p>
           )}

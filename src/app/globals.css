@@ -99,9 +99,9 @@
   --color-up: var(--up);
   --color-on-tint: var(--on-tint);
 
-  --font-sans: var(--font-nunito);
-  --font-cond: var(--font-nunito);
-  --font-mono: var(--font-nunito);
+  --font-sans: var(--font-manrope);
+  --font-cond: var(--font-manrope);
+  --font-mono: var(--font-manrope);
 }
 
 body {
@@ -115,14 +115,15 @@ body {
     radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.12) 0%, transparent 60%);
   background-attachment: fixed;
   color: var(--ink);
-  font-family: var(--font-nunito), system-ui, sans-serif;
+  font-family: var(--font-manrope), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
 /* Figures are meant to be compared down a column, so they never reflow. */
 .tnum {
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  /* Large figures need tightening or the even widths read as gappy. */
+  letter-spacing: -0.02em;
 }
 
 /* Small structural labels: the instrument-panel voice. */

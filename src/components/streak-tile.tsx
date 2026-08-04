@@ -15,7 +15,7 @@ export function StreakTile({
         {current > 0 ? "🔥" : "○"}
       </span>
       <div className="min-w-0">
-        <p className="tnum text-3xl font-extrabold leading-none">
+        <p className="tnum text-3xl font-bold leading-none">
           {current}
           <span className="ml-2 text-base font-bold text-ink-muted">
             {current === 1 ? "day" : "days"}

@@ -26,8 +26,6 @@ export type ItemLike = {
 };
 
 export type MealLike = {
-  portion: number;
-  brothLeft: boolean;
   items: ItemLike[];
 };
 
@@ -40,17 +38,6 @@ export const ZERO: Nutrition = {
   sodiumMg: 0,
 };
 
-/**
- * Broth carries much of a soup's fat and most of its sodium while contributing
- * little of what you actually swallow, so leaving it takes a meaningful bite
- * out of the total. 18% sits in the middle of the 15–20% range that shows up
- * in ramen and pho nutrition breakdowns; it is a rule of thumb, not a
- * measurement, which is why such a meal always reads as estimated.
- */
-export const BROTH_LEFT_FACTOR = 0.82;
-/** Sodium is cut harder than calories — most of it is dissolved in the broth. */
-const BROTH_SODIUM_FACTOR = 0.5;
-
 /** A day is flagged when a single sitting crosses these. */
 export const HIGH_SODIUM_MG = 1500;
 export const HIGH_FIBER_G = 10;
@@ -59,18 +46,14 @@ export const HIGH_FIBER_G = 10;
 export const ESTIMATE_RANGE = 0.15;
 
 export function mealNutrition(meal: MealLike): Nutrition {
-  const scale = meal.portion * (meal.brothLeft ? BROTH_LEFT_FACTOR : 1);
-  const sodiumScale =
-    meal.portion * (meal.brothLeft ? BROTH_SODIUM_FACTOR : 1);
-
   return meal.items.reduce<Nutrition>(
     (total, item) => ({
-      calories: total.calories + (item.calories ?? 0) * scale,
-      proteinG: total.proteinG + (item.proteinG ?? 0) * scale,
-      carbsG: total.carbsG + (item.carbsG ?? 0) * scale,
-      fatG: total.fatG + (item.fatG ?? 0) * scale,
-      fiberG: total.fiberG + (item.fiberG ?? 0) * scale,
-      sodiumMg: total.sodiumMg + (item.sodiumMg ?? 0) * sodiumScale,
+      calories: total.calories + (item.calories ?? 0),
+      proteinG: total.proteinG + (item.proteinG ?? 0),
+      carbsG: total.carbsG + (item.carbsG ?? 0),
+      fatG: total.fatG + (item.fatG ?? 0),
+      fiberG: total.fiberG + (item.fiberG ?? 0),
+      sodiumMg: total.sodiumMg + (item.sodiumMg ?? 0),
     }),
     { ...ZERO },
   );
@@ -93,9 +76,6 @@ export function sumNutrition(parts: Nutrition[]): Nutrition {
 /** A meal reads as exact only when every item in it does. */
 export function mealPrecision(meal: MealLike): "exact" | "estimated" {
   if (meal.items.length === 0) return "estimated";
-  // A partial share or a half-drunk bowl is a judgement call regardless of how
-  // well the underlying item is known.
-  if (meal.portion !== 1 || meal.brothLeft) return "estimated";
   return meal.items.every((i) => i.precision === "exact")
     ? "exact"
     : "estimated";

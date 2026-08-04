@@ -21,11 +21,6 @@ const mealSchema = z.object({
   date: z.string().refine(isDayKey, "Not a valid date."),
   name: z.string().trim().min(1, "Give the meal a name.").max(60),
   note: z.string().trim().min(1, "Describe what you ate.").max(2000),
-  portion: z.coerce
-    .number()
-    .gt(0, "Portion must be more than zero.")
-    .max(1, "Portion is the share you ate, so at most 1."),
-  brothLeft: z.boolean(),
 });
 
 /**
@@ -42,15 +37,13 @@ export async function saveMealAction(
     date: formData.get("date"),
     name: formData.get("name"),
     note: formData.get("note"),
-    portion: formData.get("portion") || 1,
-    brothLeft: formData.get("brothLeft") === "on",
   });
 
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0].message };
   }
 
-  const { date, name, note, portion, brothLeft } = parsed.data;
+  const { date, name, note } = parsed.data;
   const useAi = formData.get("estimate") === "1";
   const manualCalories = formData.get("calories");
 
@@ -93,8 +86,7 @@ export async function saveMealAction(
         fatG: optionalGrams(formData.get("fat")),
         fiberG: optionalGrams(formData.get("fiber")),
         sodiumMg: optionalGrams(formData.get("sodium")),
-        // Typed by hand off a label is the one case the user can vouch for.
-        precision: formData.get("exact") === "on" ? "exact" : "estimated",
+        precision: "estimated",
       },
     ];
   }
@@ -105,8 +97,6 @@ export async function saveMealAction(
       date,
       name,
       note,
-      portion,
-      brothLeft,
       items: {
         create: items.map((item) => ({
           name: item.name,

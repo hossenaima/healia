@@ -52,11 +52,11 @@ export default async function SettingsPage() {
       <section className="mt-10">
         <h2 className="eyebrow">Data</h2>
         <div className="mt-4 rounded-xl border border-rule bg-surface p-5">
-          <Link href="/backfill" className="text-sm underline underline-offset-2">
-            Add past weigh-ins
+          <Link href="/calendar" className="text-sm underline underline-offset-2">
+            Open the calendar
           </Link>
           <p className="mt-1 text-sm text-ink-muted">
-            Type or paste weigh-in history from another app.
+            Log or correct any day, and import an Apple Health export.
           </p>
         </div>
       </section>

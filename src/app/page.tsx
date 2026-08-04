@@ -9,6 +9,9 @@ import { WeighInForm } from "@/components/weigh-in-form";
 import { WeightChart } from "@/components/weight-chart";
 import { deleteWeightAction } from "@/app/actions/weight";
 import { WaterWeightBanner } from "@/components/water-weight-banner";
+import { ProgressRing } from "@/components/progress-ring";
+import { WeekStrip } from "@/components/week-strip";
+import { weekEnding, weighInStreak } from "@/lib/calendar";
 import { flaggedMeals, rollingAverage } from "@/lib/nutrition";
 import { addDays } from "@/lib/dates";
 
@@ -101,6 +104,10 @@ export default async function WeightPage() {
     priorTags.length > 0 &&
     culpritDate !== null;
 
+  const loggedDates = new Set(entries.map((e) => e.date));
+  const week = weekEnding(today);
+  const streak = weighInStreak([...loggedDates], today);
+
   return (
     <Shell user={user} title="Weight">
       {showBanner && (
@@ -112,64 +119,77 @@ export default async function WeightPage() {
         />
       )}
       {latest ? (
-        <section className="mt-6" aria-label="Current reading">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow">
-                {latest.date === today
-                  ? "Today"
-                  : `Last logged ${formatDayShort(latest.date)}`}
-              </p>
-              <p className="tnum mt-1 text-6xl font-light leading-none tracking-tight">
-                {fromLbs(latest.weightLbs, units).toFixed(1)}
-                <span className="ml-2 font-sans text-lg text-ink-faint">
-                  {units}
-                </span>
-              </p>
-            </div>
-            {progress !== null && (
-              <div className="text-right">
-                <p className="eyebrow">To goal</p>
-                <p className="tnum mt-1 text-2xl font-light leading-none">
-                  {progress.toFixed(0)}%
+        <>
+          <section
+            className="tile mt-5 flex items-center gap-5 p-5"
+            style={{ ["--tint" as string]: "var(--tint-mint)" }}
+            aria-label="Current reading"
+          >
+            <ProgressRing
+              percent={progress}
+              value={fromLbs(latest.weightLbs, units).toFixed(1)}
+              unit={units}
+              caption={
+                latest.date === today
+                  ? "today"
+                  : formatDayShort(latest.date).toLowerCase()
+              }
+            />
+            <div className="min-w-0 flex-1">
+              {progress !== null && (
+                <>
+                  <p className="tnum text-3xl font-extrabold leading-none">
+                    {progress.toFixed(0)}%
+                  </p>
+                  <p className="mt-1 text-sm opacity-70">of the way there</p>
+                </>
+              )}
+              {toGoal !== null && (
+                <p className="tnum mt-3 text-sm opacity-70">
+                  {toGoal <= 0
+                    ? "Goal reached"
+                    : `${formatWeight(toGoal, units)} to go`}
                 </p>
-              </div>
-            )}
-          </div>
-
-          {progress !== null && (
-            <div
-              className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-sunk"
-              role="img"
-              aria-label={`${progress.toFixed(0)} percent of the way from your start weight to your goal`}
-            >
-              <div
-                className="h-full rounded-full bg-trace"
-                style={{ width: `${progress}%` }}
-              />
+              )}
             </div>
-          )}
+          </section>
 
-          <dl className="mt-5 grid grid-cols-3 gap-3">
-            <Stat label="Since last" deltaLbs={sinceLast} units={units} />
-            <Stat label="Since start" deltaLbs={sinceStart} units={units} />
-            <div className="card px-3 py-3">
-              <dt className="eyebrow">Left to go</dt>
-              <dd className="tnum mt-1 whitespace-nowrap text-sm font-medium sm:text-lg">
-                {toGoal === null
-                  ? "—"
-                  : toGoal <= 0
-                    ? "Reached"
-                    : formatWeight(toGoal, units)}
-              </dd>
-            </div>
+          <dl className="mt-3 grid grid-cols-2 gap-3">
+            <StatTile
+              label="Since last"
+              deltaLbs={sinceLast}
+              units={units}
+              tint="var(--tint-sky)"
+            />
+            <StatTile
+              label="Since start"
+              deltaLbs={sinceStart}
+              units={units}
+              tint="var(--tint-lilac)"
+            />
           </dl>
-        </section>
+
+          <section
+            className="tile mt-3 p-5"
+            style={{ ["--tint" as string]: "var(--tint-blush)" }}
+            aria-label="This week"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="eyebrow !text-on-tint opacity-60">This week</p>
+              <p className="tnum text-sm font-bold">
+                {streak.current > 0
+                  ? `🔥 ${streak.current} day${streak.current === 1 ? "" : "s"}`
+                  : "no streak yet"}
+              </p>
+            </div>
+            <WeekStrip days={week} logged={loggedDates} today={today} />
+          </section>
+        </>
       ) : (
         <p className="mt-6 text-sm text-ink-muted">
           No weigh-ins yet. Add this morning&rsquo;s to start the line, or{" "}
-          <Link href="/backfill" className="underline underline-offset-2">
-            bring in your history
+          <Link href="/calendar" className="underline underline-offset-2">
+            open the calendar
           </Link>
           .
         </p>
@@ -201,10 +221,10 @@ export default async function WeightPage() {
           <div className="flex items-baseline justify-between">
             <h2 className="eyebrow">Log</h2>
             <Link
-              href="/backfill"
+              href="/calendar"
               className="eyebrow transition-colors hover:!text-ink"
             >
-              Add past entries
+              Calendar
             </Link>
           </div>
 
@@ -262,19 +282,21 @@ export default async function WeightPage() {
   );
 }
 
-function Stat({
+function StatTile({
   label,
   deltaLbs,
   units,
+  tint,
 }: {
   label: string;
   deltaLbs: number | null;
   units: Units;
+  tint: string;
 }) {
   return (
-    <div className="card px-3 py-3">
-      <dt className="eyebrow">{label}</dt>
-      <dd className="tnum mt-1 whitespace-nowrap text-sm font-medium sm:text-lg">
+    <div className="tile p-4" style={{ ["--tint" as string]: tint }}>
+      <dt className="eyebrow !text-on-tint opacity-60">{label}</dt>
+      <dd className="tnum mt-1 whitespace-nowrap text-xl font-extrabold">
         {deltaLbs === null ? "—" : <DeltaText deltaLbs={deltaLbs} units={units} />}
       </dd>
     </div>

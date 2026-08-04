@@ -143,14 +143,6 @@ export default async function MealsPage(props: PageProps<"/meals">) {
                           {band.high.toLocaleString()} kcal
                         </span>
                       )}
-                      {meal.portion !== 1 && (
-                        <span className="eyebrow">
-                          {Math.round(meal.portion * 100)}% eaten
-                        </span>
-                      )}
-                      {meal.brothLeft && (
-                        <span className="eyebrow">Broth left</span>
-                      )}
                     </div>
                   )}
 

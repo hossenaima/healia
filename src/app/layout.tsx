@@ -1,27 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import {
-  IBM_Plex_Mono,
-  IBM_Plex_Sans,
-  IBM_Plex_Sans_Condensed,
-} from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+// One rounded family throughout. The reference gets its warmth from rounded
+// terminals, and a second technical face would fight that.
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const plexCond = IBM_Plex_Sans_Condensed({
-  variable: "--font-plex-cond",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["400", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f7f9f9",
+  themeColor: "#f6f8f5",
 };
 
 export default function RootLayout({
@@ -41,7 +27,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plexSans.variable} ${plexCond.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

@@ -99,14 +99,6 @@ model Meal {
   /// What the user typed, verbatim, before any AI parsing.
   note String @default("")
 
-  /// Fraction of the dish actually eaten — 0.2 for a fifth of a shared plate.
-  /// Multiplies every item's figures at read time rather than being baked in,
-  /// so the underlying estimate stays intact if the share is corrected later.
-  portion Float @default(1)
-  /// Soup and ramen broth left in the bowl. Applies a fixed reduction, since
-  /// the broth carries much of the fat and sodium but little of the volume.
-  brothLeft Boolean @default(false)
-
   items MealItem[]
 
   createdAt DateTime @default(now())
@@ -130,8 +122,9 @@ model MealItem {
   sodiumMg Float?
   /// "manual" | "ai" — lets the UI flag estimates the user has not confirmed.
   source   String  @default("manual")
-  /// "exact" for a packaged item read off a label, "estimated" for anything
-  /// whose oil, sauce or portion the kitchen decided. Drives the ± range shown.
+  /// "exact" for a packaged item with a label, "estimated" for anything whose
+  /// oil, sauce or portion a kitchen decided. Inferred from the description
+  /// rather than asked for; it drives the ± range shown.
   precision String @default("estimated")
 
   createdAt DateTime @default(now())

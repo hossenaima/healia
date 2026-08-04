@@ -12,21 +12,14 @@ PIN, and all data lives in one Postgres database (Supabase).
 goal, and review or correct past entries. Re-submitting a date overwrites it, so
 there is exactly one weigh-in per day.
 
-**Add past entries** (`/backfill`) — type or paste weigh-in history from Noom or
-anywhere else, one per line. Dates are read in several formats:
-
-```
-2026-01-04, 172.4
-1/11/2026, 171.2
-Jan 18 2026  170.8
-```
-
-The count and date range update as you type, and unreadable lines are called out
-before you import.
+**Calendar** (`/calendar`) — tap any day to log or correct a weigh-in, see which
+days you have logged, and track your streak. Also imports an Apple Health export
+zip, parsed on your device so only the readings are sent.
 
 **Meals** (`/meals`) — log what you ate per day. Either type a calorie number
 yourself, or press **Estimate for me** to have the description broken into items with
-calories, macros, fiber and sodium. Estimated items are labelled, so you always know
+calories, macros, fiber and sodium. Describe it however you like — "a third of
+the fries", "left the broth" — and the estimate accounts for it. Estimated items are labelled, so you always know
 which figures came from a model rather than from you.
 
 **Settings** (`/settings`) — goal weight, start weight, units (lb or kg), and

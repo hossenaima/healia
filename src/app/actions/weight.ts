@@ -5,7 +5,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { isDayKey } from "@/lib/dates";
-import { parseBackfillText } from "@/lib/backfill";
 import { toLbs } from "@/lib/units";
 
 export type ActionResult = { ok: boolean; error?: string; saved?: number };
@@ -69,6 +68,48 @@ export async function deleteWeightAction(formData: FormData) {
   revalidatePath("/");
 }
 
+/**
+ * Save, correct, or clear one day's weigh-in from the calendar. A null weight
+ * deletes the entry, which is how a mistyped day gets undone without a
+ * separate delete affordance.
+ */
+export async function saveWeightForDateAction(input: {
+  date: string;
+  weight: number | null;
+}): Promise<ActionResult> {
+  const user = await requireUser();
+
+  if (!isDayKey(input.date)) return { ok: false, error: "Not a valid date." };
+
+  if (input.weight === null) {
+    await prisma.weightEntry.deleteMany({
+      where: { userId: user.id, date: input.date },
+    });
+    revalidatePath("/");
+    revalidatePath("/calendar");
+    return { ok: true, saved: 0 };
+  }
+
+  if (!Number.isFinite(input.weight) || input.weight <= 0) {
+    return { ok: false, error: "Enter a number." };
+  }
+
+  const weightLbs = toLbs(input.weight, user.units);
+  if (weightLbs < MIN_LBS || weightLbs > MAX_LBS) {
+    return { ok: false, error: "That weight looks off — check the units." };
+  }
+
+  await prisma.weightEntry.upsert({
+    where: { userId_date: { userId: user.id, date: input.date } },
+    update: { weightLbs },
+    create: { userId: user.id, date: input.date, weightLbs },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/calendar");
+  return { ok: true, saved: 1 };
+}
+
 // --- Bulk import -----------------------------------------------------------
 
 /** Shared by the paste box and the Apple Health importer. */
@@ -109,33 +150,8 @@ async function saveRows(
   }
 
   revalidatePath("/");
-  revalidatePath("/backfill");
+  revalidatePath("/calendar");
   return { ok: true, saved: converted.length };
-}
-
-export async function backfillAction(
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
-  const user = await requireUser();
-
-  const text = String(formData.get("entries") ?? "");
-  if (!text.trim()) return { ok: false, error: "Nothing to import." };
-
-  const { rows, errors } = parseBackfillText(text);
-  if (rows.length === 0) {
-    return { ok: false, error: errors[0] ?? "No entries found." };
-  }
-
-  const result = await saveRows(user.id, user.units, rows);
-  if (!result.ok) return result;
-
-  return {
-    ...result,
-    error: errors.length
-      ? `Skipped ${errors.length} line(s): ${errors[0]}`
-      : undefined,
-  };
 }
 
 /**

@@ -21,6 +21,7 @@ Live at `git@github.com:hossenaima/helia.git`.
 | Auth | Single PIN per account, signed cookie | No accounts service for an app with two users |
 | AI | Google Gemini (`@google/genai`) | Estimates a meal's calories and macros from plain text; sits behind one interface |
 | Charts | Recharts | |
+| Type | Nunito | Rounded terminals carry the warmth the design is after; one family throughout |
 | Auth screen visuals | ShaderGradient (three/r3f) | Dynamically imported so the daily pages never load it |
 
 ## Decisions worth remembering
@@ -55,6 +56,18 @@ features rather than guessing.
 the extracted readings cross the network; the raw health data never leaves the
 device.
 
+**Tinted tiles, not outlined cards.** Each surface takes a pastel tied to what
+it holds, so a page reads as a set of places. The tints are backgrounds only —
+data marks keep their CVD-validated hues and never rely on a tile colour.
+
+**The calendar replaced a paste box.** Typing weigh-ins meant learning a date
+format; tapping a day means the date is the thing you touch, so there is no
+format to get wrong. Clearing the field and saving deletes the entry, which
+avoids a separate delete affordance.
+
+**A streak forgives today until the day is over.** Counting strictly from today
+would show a broken streak every morning before you step on the scale.
+
 **Accounts are isolated at the query level.** Every read filters on `userId`
 and every delete is a scoped `deleteMany`, so a forged POST cannot reach another
 account's data.
@@ -69,6 +82,10 @@ account's data.
 - **SQLite on a volume** — worked, but tied hosting to a persistent disk.
   Replaced by Supabase once a host was being chosen anyway.
 - **Deriving the calorie target from height/weight** — see above.
+- **Manual portion / broth-left / read-off-a-label toggles on meals** — they
+  asked the user to do arithmetic the estimator can infer from their own
+  description, so they were removed along with their columns.
+- **The typed backfill box** — replaced by the calendar.
 - **A "what can I eat?" suggestion engine** — built, then removed. It was the
   least proven feature and the most machinery, and the point of this app is the
   daily logging habit. Kept out to stay minimal; the commit history has it if

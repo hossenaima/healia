@@ -1,28 +1,36 @@
 @import "tailwindcss";
 
 /*
- * Helia — "the morning instrument"
+ * Helia — soft, tiled, friendly.
  *
- * A daily readings log built like an instrument panel rather than a coaching
- * app: one superfamily (IBM Plex) differentiated by width and weight, numerals
- * always mono and tabular so figures line up down a column, and a two-hue
- * chart — a teal trace descending toward a plum goal horizon.
+ * Each surface is a pastel tint tied to what it holds, so the page reads as a
+ * set of places rather than a wall of cards. Radii are generous and borders are
+ * gone; separation comes from tint and a soft lift.
  *
- * Light-first. Surfaces are white and separated by air and soft elevation
- * rather than borders, so the figures carry the page. Every chart hue is
- * validated for CVD separation against its own surface in both modes.
+ * Figures stay tabular so they line up down a column — that is load-bearing in
+ * a log you scan. Data marks keep their CVD-validated hues; the pastels are
+ * backgrounds and never carry meaning on their own.
  */
 
 :root {
   color-scheme: light;
 
-  --ground: #f7f9f9; /* near-white, a breath cooler than paper */
+  --ground: #f6f8f5; /* barely-there green cast, like the reference */
   --surface: #ffffff;
-  --surface-sunk: #eef2f2;
-  --ink: #16262e; /* deep petrol */
-  --ink-muted: #5c6d76;
-  --ink-faint: #97a5ac;
-  --rule: #e6ecec;
+  --surface-sunk: #eef2ec;
+  --ink: #1e2b26;
+  --ink-muted: #5f6f68;
+  --ink-faint: #9aa8a1;
+  --rule: #e8eee9;
+
+  /* Tinted tiles. Each belongs to one kind of thing. */
+  --tint-mint: #dff0e5; /* weight */
+  --tint-sky: #dceaf4; /* activity */
+  --tint-butter: #f8eed2; /* calories */
+  --tint-blush: #fae1e3; /* meals */
+  --tint-lilac: #e9e2f5; /* goal */
+
+  --on-tint: #1e2b26;
 
   --trace: #00907f; /* weight line */
   --goal: #9a3ba0; /* goal horizon */
@@ -94,36 +102,39 @@
   --color-fat: var(--fat);
   --color-down: var(--down);
   --color-up: var(--up);
+  --color-tint-mint: var(--tint-mint);
+  --color-tint-sky: var(--tint-sky);
+  --color-tint-butter: var(--tint-butter);
+  --color-tint-blush: var(--tint-blush);
+  --color-tint-lilac: var(--tint-lilac);
+  --color-on-tint: var(--on-tint);
 
-  --font-sans: var(--font-plex-sans);
-  --font-cond: var(--font-plex-cond);
-  --font-mono: var(--font-plex-mono);
+  --font-sans: var(--font-nunito);
+  --font-cond: var(--font-nunito);
+  --font-mono: var(--font-nunito);
 }
 
 body {
   background: var(--ground);
   color: var(--ink);
-  font-family: var(--font-plex-sans), system-ui, sans-serif;
+  font-family: var(--font-nunito), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
 /* Figures are meant to be compared down a column, so they never reflow. */
 .tnum {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "zero" 1;
+  letter-spacing: -0.01em;
 }
 
 /* Small structural labels: the instrument-panel voice. */
 .eyebrow {
   /* Block by default: an inline <label> collides with the input beneath it. */
   display: block;
-  font-family: var(--font-plex-cond), var(--font-plex-sans), sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-weight: 600;
-  font-size: 0.6875rem;
-  color: var(--ink-faint);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+  color: var(--ink-muted);
 }
 
 :where(a, button, input, textarea, select, [tabindex]):focus-visible {
@@ -177,8 +188,16 @@ body {
 
 .card {
   background: var(--surface);
-  border-radius: 0.875rem;
+  border-radius: 1.5rem;
   box-shadow: var(--lift);
+}
+
+/* A tinted tile. `--tint` is set per instance. */
+.tile {
+  background: var(--tint, var(--surface));
+  color: var(--on-tint);
+  border-radius: 1.5rem;
+  box-shadow: var(--lift-sm);
 }
 
 .settle {

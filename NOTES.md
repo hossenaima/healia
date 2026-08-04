@@ -82,6 +82,13 @@ avoids a separate delete affordance.
 **A streak forgives today until the day is over.** Counting strictly from today
 would show a broken streak every morning before you step on the scale.
 
+**Itemise what the person can change, not what the dish is called.** If a
+description says what went into something, each component gets its own line —
+someone who used less granola needs a granola line to edit. A named restaurant
+dish or a packaged bar stays whole, because splitting a Big Mac into bun, patty
+and sauce is noise nobody can act on. The model collapses to the dish name
+unless told this explicitly.
+
 **An estimate you cannot argue with is just a number you have to trust.** Each
 item carries the estimator's working — the portion it assumed, what it counted —
 and every figure is editable. Correcting one scales its macros by the same

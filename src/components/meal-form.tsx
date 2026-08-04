@@ -20,9 +20,10 @@ export function MealForm({
   const [showMacros, setShowMacros] = useState(false);
   const [portion, setPortion] = useState("1");
 
-  // Which button was pressed decides whether the description goes to the
-  // estimator; a hidden field carries that through the action.
-  const [useAi, setUseAi] = useState("0");
+  // Whether the description goes to the estimator is carried by the submit
+  // button's own name/value, which the browser serialises natively. A React
+  // state flag set in onClick would race the submission.
+  const [pendingAi, setPendingAi] = useState(false);
 
   return (
     <form
@@ -35,7 +36,6 @@ export function MealForm({
       className="card mt-4 p-5"
     >
       <input type="hidden" name="date" value={date} />
-      <input type="hidden" name="estimate" value={useAi} />
 
       <label htmlFor="name" className="eyebrow block">
         Meal
@@ -157,7 +157,9 @@ export function MealForm({
       <div className="mt-6 flex flex-col gap-2 sm:flex-row">
         <button
           type="submit"
-          onClick={() => setUseAi("0")}
+          name="estimate"
+          value="0"
+          onClick={() => setPendingAi(false)}
           disabled={pending || note.trim() === "" || name.trim() === ""}
           className="
             flex-1 rounded-lg bg-surface-sunk px-4 py-3 font-cond text-sm
@@ -170,7 +172,9 @@ export function MealForm({
 
         <button
           type="submit"
-          onClick={() => setUseAi("1")}
+          name="estimate"
+          value="1"
+          onClick={() => setPendingAi(true)}
           disabled={
             pending || note.trim() === "" || name.trim() === "" || !aiEnabled
           }
@@ -185,7 +189,7 @@ export function MealForm({
             hover:opacity-90 disabled:opacity-40
           "
         >
-          {pending && useAi === "1" ? "Estimating" : "Estimate for me"}
+          {pending && pendingAi ? "Estimating" : "Estimate for me"}
         </button>
       </div>
 

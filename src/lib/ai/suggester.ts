@@ -1,16 +1,8 @@
 import "server-only";
 
-import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-
-import {
-  LOCATIONS,
-  SATIETY_GOALS,
-  type Location,
-  type SatietyGoal,
-  type Suggestion,
-} from "@/lib/eat";
+import { AiUnavailableError, aiAvailable, generateJson } from "@/lib/ai/gemini";
+import type { Location, SatietyGoal, Suggestion } from "@/lib/eat";
 
 export type { Suggestion };
 
@@ -22,7 +14,6 @@ export type { Suggestion };
  * ingredients someone actually has in the fridge.
  */
 
-// Values mirror `@/lib/eat`, which the form also reads from.
 const suggestionSchema = z.object({
   suggestions: z
     .array(
@@ -58,7 +49,7 @@ export type SuggestionResult = {
   note?: string;
 };
 
-export class SuggesterUnavailableError extends Error {}
+export { AiUnavailableError as SuggesterUnavailableError };
 
 const SYSTEM_PROMPT = `You suggest meals that fit inside a calorie budget.
 
@@ -80,7 +71,8 @@ If the user lists ingredients on hand, build options primarily from those, and
 put the ones you used in usesOnHand. Add at most one or two common staples
 (oil, salt, spices, a starch) and say so in the description. If those
 ingredients cannot make anything sensible inside the budget, say that in the
-note rather than inventing a bad option.
+note rather than inventing a bad option. When no ingredients are listed, leave
+usesOnHand empty.
 
 satietyNote is one short sentence on why this keeps you full — lead with the
 mechanism (protein, fiber, volume, water content), not with praise.
@@ -88,10 +80,8 @@ mechanism (protein, fiber, volume, water content), not with praise.
 Calorie and macro figures are estimates for a typical preparation, not label
 values. Keep descriptions to one sentence.`;
 
-class AnthropicSuggester {
+class GeminiSuggester {
   readonly available = true;
-
-  constructor(private readonly client: Anthropic) {}
 
   async suggest(request: SuggestionRequest): Promise<SuggestionResult> {
     const lines = [
@@ -109,25 +99,11 @@ class AnthropicSuggester {
       lines.push(`Ingredients on hand: ${request.ingredientsOnHand.join(", ")}`);
     }
 
-    const response = await this.client.messages.parse({
-      model: "claude-opus-5",
-      max_tokens: 4096,
-      output_config: {
-        // Fitting several options inside a hard ceiling while honouring the
-        // satiety goal is real constraint-satisfaction, so this gets more room
-        // to think than the single-meal estimator does.
-        effort: "medium",
-        format: zodOutputFormat(suggestionSchema),
-      },
+    const parsed = await generateJson({
+      schema: suggestionSchema,
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: lines.join("\n") }],
+      prompt: lines.join("\n"),
     });
-
-    if (response.stop_reason === "refusal") {
-      throw new Error("The model declined to answer that.");
-    }
-    const parsed = response.parsed_output;
-    if (!parsed) throw new Error("The model returned no usable suggestions.");
 
     // The budget is the contract. Drop anything over it rather than showing a
     // suggestion the user would have to do arithmetic to reject.
@@ -158,18 +134,14 @@ class UnavailableSuggester {
   readonly available = false;
 
   async suggest(): Promise<SuggestionResult> {
-    throw new SuggesterUnavailableError(
-      "Suggestions need an Anthropic API key. Add ANTHROPIC_API_KEY to your environment to turn them on.",
+    throw new AiUnavailableError(
+      "Suggestions are off. Add GEMINI_API_KEY to your environment to turn them on.",
     );
   }
 }
 
-export function getSuggester(): AnthropicSuggester | UnavailableSuggester {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return new UnavailableSuggester();
-  return new AnthropicSuggester(
-    new Anthropic({ apiKey, timeout: 60_000 }),
-  );
+export function getSuggester(): GeminiSuggester | UnavailableSuggester {
+  return aiAvailable() ? new GeminiSuggester() : new UnavailableSuggester();
 }
 
 function round1(n: number) {

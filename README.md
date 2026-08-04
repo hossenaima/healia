@@ -25,8 +25,8 @@ The count and date range update as you type, and unreadable lines are called out
 before you import.
 
 **Meals** (`/meals`) — log what you ate per day. Either type a calorie number
-yourself, or press **Estimate calories** to have the description broken into
-items with calories and macros. Estimated items are labelled, so you always know
+yourself, or press **Estimate for me** to have the description broken into items with
+calories, macros, fiber and sodium. Estimated items are labelled, so you always know
 which figures came from a model rather than from you.
 
 **Settings** (`/settings`) — goal weight, start weight, units (lb or kg), and
@@ -52,7 +52,8 @@ before that PIN exists.
 | `DIRECT_URL` | yes | Supabase **session pooler** URI, port `5432`. Used only to run migrations — the transaction pooler cannot run DDL. |
 | `SESSION_SECRET` | in production | Random string, 16+ characters. Signs the session cookie. The app refuses to start in production without it. |
 | `APP_TIMEZONE` | no | Your timezone, e.g. `America/New_York`. Decides which calendar day an entry belongs to when the server runs in UTC. Defaults to `America/New_York`. |
-| `ANTHROPIC_API_KEY` | no | Turns on calorie estimation via Claude. Without it the app still works; the estimate button is disabled and says why. |
+| `GEMINI_API_KEY` | no | Google AI Studio key. Turns on calorie estimation and "What can I eat?". Without it the app still works; those buttons are disabled and say why. |
+| `GEMINI_MODEL` | no | Defaults to `gemini-2.5-flash`. |
 | `ALLOW_SIGNUP` | no | Set to `false` to close signup once everyone who needs an account has one. The first account is always allowed. |
 
 Generate a session secret with:
@@ -68,7 +69,7 @@ The app holds no local state, so any host works — Vercel included.
 1. Import this repo and let it run `npm run build`.
 2. Set `DATABASE_URL`, `DIRECT_URL`, and `SESSION_SECRET`, plus `APP_TIMEZONE`
    if you are not on US Eastern.
-3. Add `ANTHROPIC_API_KEY` when you want calorie estimation on.
+3. Add `GEMINI_API_KEY` when you want estimation and suggestions on.
 
 `npm run build` runs `prisma migrate deploy` first, so schema changes apply on
 each deploy.

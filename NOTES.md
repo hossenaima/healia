@@ -93,8 +93,17 @@ account's data.
 See `.env.example`. `GEMINI_API_KEY` turns on meal estimation; without
 it the app still works and the button explains why it is disabled.
 
+## Operational notes
+
+- **No PIN recovery by design.** `scripts/reset-pin.mjs` is the escape hatch;
+  it re-hashes with the same scrypt parameters as `src/lib/auth.ts`, which the
+  two must keep in step or a reset PIN will not verify.
+
 ## Open items
 
 - Supabase project is in **us-west-1** while the user is US East — ~70ms of
   avoidable latency on every request. Cheap to fix while the database is small.
-- Not yet deployed.
+- Deployed at https://helia-plum.vercel.app (Vercel CLI, not Git-connected —
+  pushes do not auto-deploy yet).
+- Signup is still open; close it with `ALLOW_SIGNUP=false` once the second
+  person has an account.

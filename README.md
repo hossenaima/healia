@@ -44,6 +44,18 @@ npm run dev                # http://localhost:3000
 The first visit sends you to `/setup` to choose a PIN. Nothing is reachable
 before that PIN exists.
 
+## Forgot a PIN
+
+PINs are stored as scrypt hashes and there is no email recovery, so a forgotten
+PIN is reset directly by whoever has database access:
+
+```bash
+node scripts/reset-pin.mjs "Your Name" 4821
+```
+
+It writes to whichever database `DIRECT_URL` points at, so it fixes local and
+production together. Weigh-ins and meals are untouched.
+
 ## Environment
 
 | Variable | Required | What it does |

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
+import { GlassFilter } from "@/components/glass-filter";
 
 // One rounded family throughout. The reference gets its warmth from rounded
 // terminals, and a second technical face would fight that.
@@ -29,7 +30,10 @@ export default function RootLayout({
       lang="en"
       className={`${nunito.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <GlassFilter />
+        {children}
+      </body>
     </html>
   );
 }

@@ -56,10 +56,19 @@ features rather than guessing.
 the extracted readings cross the network; the raw health data never leaves the
 device.
 
-**Every box is glass.** A blurred translucent panel with a bright top edge and
-a hairline rim, over a barely-there wash — glass has nothing to refract against
-a flat fill, which is what the two faint radial gradients on `body` are for.
-Done in CSS because liquid-glass-js cannot wrap React children.
+**Glass is a lens, not a frost.** A blur alone reads as frosted plastic. The
+refraction comes from an oversized `::after` carrying a copy of the page wash,
+warped by an SVG `feTurbulence` + `feDisplacementMap`, clipped by the panel so
+the outline stays crisp. Both the body wash and the copy are
+`background-attachment: fixed`, which is what makes the copy line up with the
+real backdrop — the trick does not survive removing that.
+
+**`backdrop-filter: url(#filter)` does not work in Chrome.** SVG filters are
+only honoured by `filter`, not `backdrop-filter`; the whole declaration is
+dropped and computes to `none`. That is why the first attempt looked flat.
+
+**Glass needs something behind it.** On a flat near-white page there is nothing
+to refract, so the wash on `body` is load-bearing, not decoration.
 
 **Colour is reserved for data.** An earlier pass gave each tile its own pastel;
 it read as noise. The only saturated things on screen now are the trace, the

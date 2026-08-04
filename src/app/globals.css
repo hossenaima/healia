@@ -41,9 +41,10 @@
   --lift: 0 1px 2px rgb(22 38 46 / 0.04), 0 4px 16px rgb(22 38 46 / 0.05);
   --lift-sm: 0 1px 2px rgb(22 38 46 / 0.05);
 
-  --glass-tint: rgb(255 255 255 / 0.55);
-  --glass-sheen: rgb(255 255 255 / 0.75);
-  --glass-rim: rgb(22 38 46 / 0.06);
+  --glass-tint: rgb(255 255 255 / 0.42);
+  --glass-sheen: rgb(255 255 255 / 0.9);
+  --glass-shade: rgb(30 43 38 / 0.06);
+  --glass-rim: rgb(30 43 38 / 0.08);
 }
 
 /*
@@ -109,8 +110,9 @@ body {
      fill, so this gives the panels something to sit on without adding colour
      anyone would notice as colour. */
   background-image:
-    radial-gradient(70% 55% at 12% 0%, rgb(0 144 127 / 0.06) 0%, transparent 60%),
-    radial-gradient(60% 50% at 95% 100%, rgb(154 59 160 / 0.05) 0%, transparent 55%);
+    radial-gradient(58% 42% at 8% 4%, rgb(0 144 127 / 0.18) 0%, transparent 62%),
+    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.13) 0%, transparent 58%),
+    radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.12) 0%, transparent 60%);
   background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-nunito), system-ui, sans-serif;
@@ -182,36 +184,86 @@ body {
   position: relative;
 }
 
-/* `.card` and `.tile` are the same material now — both are glass. Kept as two
-   names so call sites need not change. */
+/*
+ * Glass, as a lens rather than a frost.
+ *
+ * Three layers do the work: the backdrop is warped by the SVG displacement
+ * filter and blurred; a thick inset rim reads as the ground edge of a slab;
+ * and a specular sweep across the top-left catches the light. Drop any one and
+ * it collapses back into a translucent rectangle.
+ */
 .card,
-.tile {
+.tile,
+.glass {
   position: relative;
-  border-radius: 1.5rem;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1.75rem;
   background: var(--glass-tint);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  /* Chrome rejects SVG filters inside backdrop-filter, so the refraction is
+     done by ::after below. This handles the frosting of anything else behind. */
+  backdrop-filter: blur(12px) saturate(175%) brightness(1.03);
+  -webkit-backdrop-filter: blur(12px) saturate(175%) brightness(1.03);
   box-shadow:
-    inset 0 1px 0 var(--glass-sheen),
+    /* the lit top-left edge and the shaded bottom-right, as on a real slab */
+    inset 1px 1px 0 var(--glass-sheen),
+    inset -1px -1px 0 var(--glass-shade),
     inset 0 0 0 1px var(--glass-rim),
+    inset 0 0 24px -8px var(--glass-sheen),
     var(--lift);
 }
 
-/* The specular highlight along the top edge — what makes it read as glass
-   rather than a translucent rectangle. */
+/* Specular sweep. Angled rather than straight down so it reads as a highlight
+   catching light, not a gradient fill. */
 .card::before,
-.tile::before {
+.tile::before,
+.glass::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(to bottom, var(--glass-sheen) 0%, transparent 42%);
+  background: linear-gradient(
+    135deg,
+    var(--glass-sheen) 0%,
+    transparent 28%,
+    transparent 72%,
+    var(--glass-shade) 100%
+  );
   pointer-events: none;
+  z-index: -1;
 }
 
 .card > *,
-.tile > * {
+.tile > *,
+.glass > * {
   position: relative;
+}
+
+/*
+ * The refraction.
+ *
+ * A warped copy of the page wash, sitting under the panel. Because both the
+ * body background and this one are `fixed`, the copy is aligned with the real
+ * thing pixel for pixel — so displacing it looks like the page bending through
+ * the glass, which is the part a plain blur cannot fake.
+ */
+.card::after,
+.tile::after,
+.glass::after {
+  content: "";
+  position: absolute;
+  /* Oversized so the displaced edges fall outside the clip. */
+  inset: -36px;
+  background-color: var(--ground);
+  background-image:
+    radial-gradient(58% 42% at 8% 4%, rgb(0 144 127 / 0.18) 0%, transparent 62%),
+    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.13) 0%, transparent 58%),
+    radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.12) 0%, transparent 60%);
+  background-attachment: fixed;
+  filter: url(#liquid-warp);
+  opacity: 0.92;
+  pointer-events: none;
+  z-index: -2;
 }
 
 .settle {

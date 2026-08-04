@@ -122,7 +122,6 @@ export default async function WeightPage() {
         <>
           <section
             className="tile mt-5 flex items-center gap-5 p-5"
-            style={{ ["--tint" as string]: "var(--tint-mint)" }}
             aria-label="Current reading"
           >
             <ProgressRing
@@ -141,11 +140,11 @@ export default async function WeightPage() {
                   <p className="tnum text-3xl font-extrabold leading-none">
                     {progress.toFixed(0)}%
                   </p>
-                  <p className="mt-1 text-sm opacity-70">of the way there</p>
+                  <p className="mt-1 text-sm text-ink-muted">of the way there</p>
                 </>
               )}
               {toGoal !== null && (
-                <p className="tnum mt-3 text-sm opacity-70">
+                <p className="tnum mt-3 text-sm text-ink-muted">
                   {toGoal <= 0
                     ? "Goal reached"
                     : `${formatWeight(toGoal, units)} to go`}
@@ -155,27 +154,16 @@ export default async function WeightPage() {
           </section>
 
           <dl className="mt-3 grid grid-cols-2 gap-3">
-            <StatTile
-              label="Since last"
-              deltaLbs={sinceLast}
-              units={units}
-              tint="var(--tint-sky)"
-            />
-            <StatTile
-              label="Since start"
-              deltaLbs={sinceStart}
-              units={units}
-              tint="var(--tint-lilac)"
-            />
+            <StatTile label="Since last" deltaLbs={sinceLast} units={units} />
+            <StatTile label="Since start" deltaLbs={sinceStart} units={units} />
           </dl>
 
           <section
             className="tile mt-3 p-5"
-            style={{ ["--tint" as string]: "var(--tint-blush)" }}
             aria-label="This week"
           >
             <div className="flex items-baseline justify-between gap-3">
-              <p className="eyebrow !text-on-tint opacity-60">This week</p>
+              <p className="eyebrow">This week</p>
               <p className="tnum text-sm font-bold">
                 {streak.current > 0
                   ? `🔥 ${streak.current} day${streak.current === 1 ? "" : "s"}`
@@ -286,16 +274,14 @@ function StatTile({
   label,
   deltaLbs,
   units,
-  tint,
 }: {
   label: string;
   deltaLbs: number | null;
   units: Units;
-  tint: string;
 }) {
   return (
-    <div className="tile p-4" style={{ ["--tint" as string]: tint }}>
-      <dt className="eyebrow !text-on-tint opacity-60">{label}</dt>
+    <div className="tile p-4">
+      <dt className="eyebrow">{label}</dt>
       <dd className="tnum mt-1 whitespace-nowrap text-xl font-extrabold">
         {deltaLbs === null ? "—" : <DeltaText deltaLbs={deltaLbs} units={units} />}
       </dd>

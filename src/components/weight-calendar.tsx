@@ -117,7 +117,7 @@ export function WeightCalendar({
                   isSelected
                     ? "bg-ink text-ground"
                     : logged
-                      ? "bg-[var(--tint-mint)] text-on-tint"
+                      ? "bg-trace/12 text-ink"
                       : "text-ink-muted hover:bg-surface-sunk"
                 }
               `}

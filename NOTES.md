@@ -56,9 +56,14 @@ features rather than guessing.
 the extracted readings cross the network; the raw health data never leaves the
 device.
 
-**Tinted tiles, not outlined cards.** Each surface takes a pastel tied to what
-it holds, so a page reads as a set of places. The tints are backgrounds only —
-data marks keep their CVD-validated hues and never rely on a tile colour.
+**Every box is glass.** A blurred translucent panel with a bright top edge and
+a hairline rim, over a barely-there wash — glass has nothing to refract against
+a flat fill, which is what the two faint radial gradients on `body` are for.
+Done in CSS because liquid-glass-js cannot wrap React children.
+
+**Colour is reserved for data.** An earlier pass gave each tile its own pastel;
+it read as noise. The only saturated things on screen now are the trace, the
+goal and the macro split — things that mean something.
 
 **The calendar replaced a paste box.** Typing weigh-ins meant learning a date
 format; tapping a day means the date is the thing you touch, so there is no

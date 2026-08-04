@@ -3,9 +3,10 @@
 /*
  * Helia — soft, tiled, friendly.
  *
- * Each surface is a pastel tint tied to what it holds, so the page reads as a
- * set of places rather than a wall of cards. Radii are generous and borders are
- * gone; separation comes from tint and a soft lift.
+ * Near-monochrome and quiet. Surfaces are glass: a blurred translucent panel
+ * with a bright top edge and a hairline rim, floating over a barely-there wash.
+ * Colour is reserved for data — the trace, the goal, the macro split — so the
+ * only saturated things on screen are the ones that mean something.
  *
  * Figures stay tabular so they line up down a column — that is load-bearing in
  * a log you scan. Data marks keep their CVD-validated hues; the pastels are
@@ -22,13 +23,6 @@
   --ink-muted: #5f6f68;
   --ink-faint: #9aa8a1;
   --rule: #e8eee9;
-
-  /* Tinted tiles. Each belongs to one kind of thing. */
-  --tint-mint: #dff0e5; /* weight */
-  --tint-sky: #dceaf4; /* activity */
-  --tint-butter: #f8eed2; /* calories */
-  --tint-blush: #fae1e3; /* meals */
-  --tint-lilac: #e9e2f5; /* goal */
 
   --on-tint: #1e2b26;
 
@@ -47,7 +41,7 @@
   --lift: 0 1px 2px rgb(22 38 46 / 0.04), 0 4px 16px rgb(22 38 46 / 0.05);
   --lift-sm: 0 1px 2px rgb(22 38 46 / 0.05);
 
-  --glass-tint: rgb(255 255 255 / 0.62);
+  --glass-tint: rgb(255 255 255 / 0.55);
   --glass-sheen: rgb(255 255 255 / 0.75);
   --glass-rim: rgb(22 38 46 / 0.06);
 }
@@ -102,11 +96,6 @@
   --color-fat: var(--fat);
   --color-down: var(--down);
   --color-up: var(--up);
-  --color-tint-mint: var(--tint-mint);
-  --color-tint-sky: var(--tint-sky);
-  --color-tint-butter: var(--tint-butter);
-  --color-tint-blush: var(--tint-blush);
-  --color-tint-lilac: var(--tint-lilac);
   --color-on-tint: var(--on-tint);
 
   --font-sans: var(--font-nunito);
@@ -116,6 +105,13 @@
 
 body {
   background: var(--ground);
+  /* Two very low-opacity washes. Glass has nothing to refract over a flat
+     fill, so this gives the panels something to sit on without adding colour
+     anyone would notice as colour. */
+  background-image:
+    radial-gradient(70% 55% at 12% 0%, rgb(0 144 127 / 0.06) 0%, transparent 60%),
+    radial-gradient(60% 50% at 95% 100%, rgb(154 59 160 / 0.05) 0%, transparent 55%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-nunito), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
@@ -186,18 +182,36 @@ body {
   position: relative;
 }
 
-.card {
-  background: var(--surface);
+/* `.card` and `.tile` are the same material now — both are glass. Kept as two
+   names so call sites need not change. */
+.card,
+.tile {
+  position: relative;
   border-radius: 1.5rem;
-  box-shadow: var(--lift);
+  background: var(--glass-tint);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-sheen),
+    inset 0 0 0 1px var(--glass-rim),
+    var(--lift);
 }
 
-/* A tinted tile. `--tint` is set per instance. */
-.tile {
-  background: var(--tint, var(--surface));
-  color: var(--on-tint);
-  border-radius: 1.5rem;
-  box-shadow: var(--lift-sm);
+/* The specular highlight along the top edge — what makes it read as glass
+   rather than a translucent rectangle. */
+.card::before,
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, var(--glass-sheen) 0%, transparent 42%);
+  pointer-events: none;
+}
+
+.card > *,
+.tile > * {
+  position: relative;
 }
 
 .settle {

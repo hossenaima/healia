@@ -10,21 +10,18 @@ export function StreakTile({
   best: number;
 }) {
   return (
-    <div
-      className="tile mt-4 flex items-center gap-4 p-5"
-      style={{ ["--tint" as string]: "var(--tint-butter)" }}
-    >
+    <div className="tile mt-4 flex items-center gap-4 p-5">
       <span aria-hidden className="text-4xl leading-none">
         {current > 0 ? "🔥" : "○"}
       </span>
       <div className="min-w-0">
         <p className="tnum text-3xl font-extrabold leading-none">
           {current}
-          <span className="ml-2 text-base font-bold opacity-60">
+          <span className="ml-2 text-base font-bold text-ink-muted">
             {current === 1 ? "day" : "days"}
           </span>
         </p>
-        <p className="mt-1 text-sm opacity-70">
+        <p className="mt-1 text-sm text-ink-muted">
           {current === 0
             ? "Log today to start a streak."
             : best > current

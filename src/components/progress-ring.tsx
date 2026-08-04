@@ -41,7 +41,7 @@ export function ProgressRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--surface)"
+          stroke="var(--surface-sunk)"
           strokeWidth={stroke}
         />
         {percent !== null && (
@@ -62,8 +62,8 @@ export function ProgressRing({
 
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <p className="tnum text-4xl font-extrabold leading-none">{value}</p>
-        <p className="mt-0.5 text-sm font-bold opacity-50">{unit}</p>
-        <p className="mt-1 text-xs opacity-60">{caption}</p>
+        <p className="mt-0.5 text-sm font-bold text-ink-faint">{unit}</p>
+        <p className="mt-1 text-xs text-ink-muted">{caption}</p>
       </div>
     </div>
   );

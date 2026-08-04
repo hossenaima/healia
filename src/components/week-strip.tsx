@@ -25,7 +25,7 @@ export function WeekStrip({
 
         return (
           <li key={day} className="flex flex-1 flex-col items-center gap-1.5">
-            <span className="text-[0.7rem] font-bold opacity-50">{letter}</span>
+            <span className="text-[0.7rem] font-bold text-ink-faint">{letter}</span>
             <span
               title={day}
               className={`
@@ -35,8 +35,8 @@ export function WeekStrip({
                   has
                     ? "bg-trace text-white"
                     : isToday
-                      ? "bg-surface ring-2 ring-trace/40"
-                      : "bg-surface opacity-60"
+                      ? "bg-surface-sunk ring-2 ring-trace/40"
+                      : "bg-surface-sunk text-ink-faint"
                 }
               `}
             >

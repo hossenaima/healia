@@ -80,6 +80,7 @@ export async function saveMealAction(
       {
         name: note.slice(0, 200),
         quantity: null,
+        basis: null,
         calories: Math.round(calories),
         proteinG: optionalGrams(formData.get("protein")),
         carbsG: optionalGrams(formData.get("carbs")),
@@ -101,6 +102,7 @@ export async function saveMealAction(
         create: items.map((item) => ({
           name: item.name,
           quantity: item.quantity,
+          basis: item.basis,
           calories: item.calories,
           proteinG: item.proteinG,
           carbsG: item.carbsG,
@@ -142,6 +144,72 @@ export async function saveActiveBurnAction(formData: FormData) {
   });
 
   revalidatePath("/meals");
+}
+
+/**
+ * Correct an estimate. The figures the model produced are a starting point, not
+ * a verdict, so every item's calories and portion text can be edited and any
+ * item removed. Macros are scaled with the calories rather than edited by hand
+ * — nobody wants to retype four numbers to say "that was half the size".
+ */
+export async function updateMealItemsAction(input: {
+  mealId: string;
+  items: Array<{ id: string; calories: number; quantity: string }>;
+  removedIds: string[];
+}): Promise<MealActionResult> {
+  const user = await requireUser();
+
+  const meal = await prisma.meal.findFirst({
+    where: { id: input.mealId, userId: user.id },
+    include: { items: true },
+  });
+  if (!meal) return { ok: false, error: "That meal is gone." };
+
+  const byId = new Map(meal.items.map((i) => [i.id, i]));
+
+  const updates = input.items.flatMap((edit) => {
+    const original = byId.get(edit.id);
+    if (!original) return [];
+
+    const calories = Math.max(0, Math.round(Number(edit.calories)));
+    if (!Number.isFinite(calories)) return [];
+
+    // Scale macros by however much the calorie figure moved, so the split stays
+    // honest. A zeroed original has no ratio to preserve, so macros go to zero.
+    const before = original.calories ?? 0;
+    const ratio = before > 0 ? calories / before : 0;
+    const scale = (v: number | null) =>
+      v === null ? null : Math.round(v * ratio * 10) / 10;
+
+    return [
+      prisma.mealItem.update({
+        where: { id: edit.id },
+        data: {
+          calories,
+          quantity: edit.quantity.trim().slice(0, 100) || null,
+          proteinG: scale(original.proteinG),
+          carbsG: scale(original.carbsG),
+          fatG: scale(original.fatG),
+          fiberG: scale(original.fiberG),
+          sodiumMg: scale(original.sodiumMg),
+          // Once a human has adjusted it, it is their number, not an estimate.
+          precision: "exact",
+        },
+      }),
+    ];
+  });
+
+  const removable = input.removedIds.filter((id) => byId.has(id));
+  if (removable.length > 0) {
+    updates.push(
+      prisma.mealItem.deleteMany({ where: { id: { in: removable } } }) as never,
+    );
+  }
+
+  await prisma.$transaction(updates);
+
+  revalidatePath("/meals");
+  return { ok: true };
 }
 
 export async function deleteMealAction(formData: FormData) {

@@ -20,7 +20,9 @@ zip, parsed on your device so only the readings are sent.
 yourself, or press **Estimate for me** to have the description broken into items with
 calories, macros, fiber and sodium. Describe it however you like — "a third of
 the fries", "left the broth" — and the estimate accounts for it. Estimated items are labelled, so you always know
-which figures came from a model rather than from you.
+which figures came from a model rather than from you — and tapping **Show
+working** reveals the portion it assumed for each item, which you can then
+correct or scale down.
 
 **Settings** (`/settings`) — goal weight, start weight, units (lb or kg), and
 your PIN.

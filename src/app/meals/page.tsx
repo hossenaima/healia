@@ -4,18 +4,12 @@ import { prisma } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { addDays, formatDayLong, isDayKey, serverToday } from "@/lib/dates";
 import { getEstimator } from "@/lib/ai/estimator";
-import {
-  estimateBand,
-  mealNutrition,
-  mealPrecision,
-  sumNutrition,
-} from "@/lib/nutrition";
+import { mealNutrition, sumNutrition } from "@/lib/nutrition";
 import { Shell } from "@/components/shell";
 import { MealForm } from "@/components/meal-form";
-import { MacroBar } from "@/components/macro-bar";
 import { DayTotals } from "@/components/day-totals";
 import { ActiveBurnField } from "@/components/active-burn-field";
-import { deleteMealAction } from "@/app/actions/meals";
+import { MealCard } from "@/components/meal-card";
 
 export default async function MealsPage(props: PageProps<"/meals">) {
   const user = await currentUser();
@@ -94,90 +88,9 @@ export default async function MealsPage(props: PageProps<"/meals">) {
           <h2 className="eyebrow">Log</h2>
 
           <ul className="mt-3 space-y-3">
-            {meals.map((meal) => {
-              const n = mealNutrition(meal);
-              const precision = mealPrecision(meal);
-              const band = estimateBand(n.calories);
-              const hasCalories = meal.items.some((i) => i.calories !== null);
-              const estimated = meal.items.some((i) => i.source === "ai");
-
-              // A manually entered meal stores one item named after the note,
-              // so listing it would just repeat the line above it.
-              const showItems =
-                meal.items.length > 0 &&
-                !(meal.items.length === 1 && meal.items[0].name === meal.note);
-
-              return (
-                <li key={meal.id} className="card p-4">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className="min-w-0 flex-1 truncate font-cond text-base font-semibold">
-                      {meal.name}
-                    </p>
-                    <div className="flex shrink-0 items-baseline gap-3">
-                      <span className="tnum text-sm font-medium">
-                        {hasCalories
-                          ? `${Math.round(n.calories).toLocaleString()} kcal`
-                          : "—"}
-                      </span>
-                      <form action={deleteMealAction}>
-                        <input type="hidden" name="id" value={meal.id} />
-                        <button
-                          type="submit"
-                          aria-label={`Delete ${meal.name}`}
-                          className="text-lg leading-none text-ink-faint transition-colors hover:text-up"
-                        >
-                          ×
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-
-                  <p className="mt-1.5 text-sm text-ink-muted">{meal.note}</p>
-
-                  {hasCalories && (
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <PrecisionBadge precision={precision} />
-                      {precision === "estimated" && (
-                        <span className="tnum text-xs text-ink-muted">
-                          {band.low.toLocaleString()}–
-                          {band.high.toLocaleString()} kcal
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {n.calories > 0 && <MacroBar macros={n} size="compact" />}
-
-                  {showItems && (
-                    <ul className="mt-3 space-y-1 border-t border-rule pt-3">
-                      {meal.items.map((item) => (
-                        <li
-                          key={item.id}
-                          className="flex items-baseline justify-between gap-3 text-sm"
-                        >
-                          <span className="min-w-0 flex-1 truncate text-ink-muted">
-                            {item.name}
-                            {item.quantity && (
-                              <span className="text-ink-faint">
-                                {" "}
-                                · {item.quantity}
-                              </span>
-                            )}
-                          </span>
-                          <span className="tnum shrink-0 text-xs">
-                            {item.calories ?? "—"}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {estimated && (
-                    <p className="eyebrow mt-3">Estimated from your description</p>
-                  )}
-                </li>
-              );
-            })}
+            {meals.map((meal) => (
+              <MealCard key={meal.id} meal={meal} />
+            ))}
           </ul>
         </section>
       )}
@@ -188,27 +101,6 @@ export default async function MealsPage(props: PageProps<"/meals">) {
         </p>
       )}
     </Shell>
-  );
-}
-
-function PrecisionBadge({ precision }: { precision: "exact" | "estimated" }) {
-  const exact = precision === "exact";
-  return (
-    <span
-      className="eyebrow flex items-center gap-1.5"
-      title={
-        exact
-          ? "Read off a nutrition label."
-          : "Oils, sauces and portions vary, so treat this as a range."
-      }
-    >
-      <span
-        aria-hidden
-        className="inline-block size-2 rounded-full"
-        style={{ backgroundColor: exact ? "var(--down)" : "var(--carbs)" }}
-      />
-      {exact ? "Exact" : "Estimated"}
-    </span>
   );
 }
 

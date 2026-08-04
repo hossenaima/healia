@@ -33,9 +33,9 @@
   --up: #a2472c; /* moving away */
 
   /* Macro breakdown. Paired with gram labels, never carrying meaning alone. */
-  --protein: #2a5fd6;
-  --carbs: #c77a0a;
-  --fat: #a34a63;
+  --protein: #4e86e0;
+  --carbs: #bf8c22;
+  --fat: #ae5fb0;
 
   --focus: #00907f;
   --lift: 0 1px 2px rgb(22 38 46 / 0.04), 0 4px 16px rgb(22 38 46 / 0.05);

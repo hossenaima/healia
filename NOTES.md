@@ -82,6 +82,12 @@ avoids a separate delete affordance.
 **A streak forgives today until the day is over.** Counting strictly from today
 would show a broken streak every morning before you step on the scale.
 
+**An estimate you cannot argue with is just a number you have to trust.** Each
+item carries the estimator's working — the portion it assumed, what it counted —
+and every figure is editable. Correcting one scales its macros by the same
+ratio, so the split stays honest without retyping four numbers, and flips the
+item to `exact`, because once a person has adjusted it, it is their number.
+
 **Accounts are isolated at the query level.** Every read filters on `userId`
 and every delete is a scoped `deleteMany`, so a forged POST cannot reach another
 account's data.

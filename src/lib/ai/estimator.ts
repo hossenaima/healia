@@ -24,6 +24,8 @@ const estimateSchema = z.object({
       name: z.string(),
       /** Empty string rather than null, for the same reason. */
       quantity: z.string(),
+      /** The working: portion assumed, what was counted, what was left out. */
+      basis: z.string(),
       calories: z.number(),
       proteinG: z.number(),
       carbsG: z.number(),
@@ -42,6 +44,7 @@ const MAX_ITEMS = 25;
 export type EstimatedItem = {
   name: string;
   quantity: string | null;
+  basis: string | null;
   calories: number;
   proteinG: number | null;
   carbsG: number | null;
@@ -70,6 +73,12 @@ const SYSTEM_PROMPT = `You estimate nutrition for food described in plain langua
 Break the description into individual food items. For each item, give your best
 estimate of calories and macros for the portion described. If no portion is
 given, assume a typical single serving and say so in the note.
+
+For each item, "basis" is one short sentence showing your working: the portion
+you assumed, what you counted, and anything you left out. Write it so someone
+can disagree with a specific number — "assumed a 12oz bowl; noodles ~200g, one
+egg, two slices of chashu" beats "typical serving". Give quantities in the
+units a person would use.
 
 Fill in every field. Use 0 when the food genuinely contains none of that macro
 (black coffee has no fat; olive oil has no carbs). Leave quantity as an empty
@@ -103,6 +112,7 @@ class GeminiEstimator implements CalorieEstimator {
       items: parsed.items.slice(0, MAX_ITEMS).map((item) => ({
         name: item.name.slice(0, 200),
         quantity: item.quantity.trim().slice(0, 100) || null,
+        basis: item.basis.trim().slice(0, 300) || null,
         calories: Math.max(0, Math.round(item.calories)),
         proteinG: round1(item.proteinG),
         carbsG: round1(item.carbsG),

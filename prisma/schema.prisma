@@ -120,6 +120,10 @@ model MealItem {
   fatG     Float?
   fiberG   Float?
   sodiumMg Float?
+  /// How the figure was arrived at, in the estimator's own words — the portion
+  /// it assumed and what it counted. Shown so the number can be argued with
+  /// rather than just accepted.
+  basis    String?
   /// "manual" | "ai" — lets the UI flag estimates the user has not confirmed.
   source   String  @default("manual")
   /// "exact" for a packaged item with a label, "estimated" for anything whose

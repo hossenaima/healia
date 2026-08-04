@@ -9,7 +9,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * or to extend its own life.
  */
 
-export const SESSION_COOKIE = "healia_session";
+export const SESSION_COOKIE = "helia_session";
 export const SESSION_DAYS = 90;
 
 function sessionSecret(): string {

@@ -25,15 +25,12 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Healia",
+  title: "Helia",
   description: "A daily log of weigh-ins and meals.",
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f1f4f3" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c1817" },
-  ],
+  themeColor: "#f7f9f9",
 };
 
 export default function RootLayout({

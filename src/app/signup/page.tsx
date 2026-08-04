@@ -18,7 +18,7 @@ export default async function SignupPage() {
       <div className="settle">
         <p className="eyebrow">{returning ? "New account" : "First run"}</p>
         <h1 className="mt-1 font-cond text-3xl font-bold tracking-tight">
-          {returning ? "Join Healia" : "Set up Healia"}
+          {returning ? "Join Helia" : "Set up Helia"}
         </h1>
         <p className="mt-2 text-sm text-ink-muted">
           Your name is how you sign in. Pick a PIN of 4 to 10 digits — it is the

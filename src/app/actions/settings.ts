@@ -71,7 +71,6 @@ export async function saveSettingsAction(
 
   revalidatePath("/");
   revalidatePath("/meals");
-  revalidatePath("/eat");
   revalidatePath("/settings");
   return { ok: true, message: "Saved." };
 }

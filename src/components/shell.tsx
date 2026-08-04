@@ -16,7 +16,7 @@ export function Shell({
       <header className="sticky top-0 z-20 glass !rounded-none !shadow-none md:bg-transparent md:backdrop-blur-none">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-5 py-4 md:px-6">
           <span className="font-cond text-lg font-bold tracking-tight">
-            Healia
+            Helia
           </span>
           <div className="flex min-w-0 items-center gap-3">
             {/* Whose log this is — the app holds more than one. */}

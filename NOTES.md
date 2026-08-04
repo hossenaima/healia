@@ -1,17 +1,16 @@
-# Healia — build notes
+# Helia — build notes
 
 Running record of what was built, what was decided, and why. Kept in the repo
 so the reasoning survives the conversation it came from.
 
 ---
 
-## What Healia is
+## What Helia is
 
-A personal health log for a small number of people. Two daily habits — a
-morning weigh-in and meal logging — plus a suggestion engine that answers
-"what can I eat with the calories I have left?"
+A personal health log for a small number of people. Two daily habits: a
+morning weigh-in and meal logging.
 
-Live at `git@github.com:hossenaima/healia.git`.
+Live at `git@github.com:hossenaima/helia.git`.
 
 ## Stack
 
@@ -20,7 +19,7 @@ Live at `git@github.com:hossenaima/healia.git`.
 | Framework | Next.js 16 (App Router, Turbopack) | One deployable unit; server actions avoid a separate API layer |
 | Database | Supabase Postgres via Prisma 7 | Stateless app → deploys anywhere including Vercel |
 | Auth | Single PIN per account, signed cookie | No accounts service for an app with two users |
-| AI | Google Gemini (`@google/genai`) | Whichever key the owner has; sits behind one interface |
+| AI | Google Gemini (`@google/genai`) | Estimates a meal's calories and macros from plain text; sits behind one interface |
 | Charts | Recharts | |
 | Auth screen visuals | ShaderGradient (three/r3f) | Dynamically imported so the daily pages never load it |
 
@@ -70,13 +69,17 @@ account's data.
 - **SQLite on a volume** — worked, but tied hosting to a persistent disk.
   Replaced by Supabase once a host was being chosen anyway.
 - **Deriving the calorie target from height/weight** — see above.
+- **A "what can I eat?" suggestion engine** — built, then removed. It was the
+  least proven feature and the most machinery, and the point of this app is the
+  daily logging habit. Kept out to stay minimal; the commit history has it if
+  it is ever wanted back.
 
 ## Gotchas hit during the build
 
 - `"use server"` files may export only async functions. Constants and parsers
   have to live in a separate module.
 - Client components cannot import anything that pulls in `server-only`. Shared
-  vocabulary lives in `src/lib/eat.ts`, not in the AI module.
+  vocabulary has to live in a module the AI code does not own.
 - A submit button's `name`/`value` is serialised natively by the browser.
   Setting React state in `onClick` to record which button was pressed **races
   the submission** and can send the previous value.
@@ -87,8 +90,8 @@ account's data.
 
 ## Environment
 
-See `.env.example`. `GEMINI_API_KEY` turns on estimation and suggestions;
-without it the app still works and those buttons explain why they are disabled.
+See `.env.example`. `GEMINI_API_KEY` turns on meal estimation; without
+it the app still works and the button explains why it is disabled.
 
 ## Open items
 

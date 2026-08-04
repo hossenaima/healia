@@ -21,7 +21,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
       <div className="settle">
         <p className="eyebrow">Locked</p>
         <h1 className="mt-1 font-cond text-3xl font-bold tracking-tight">
-          Healia
+          Helia
         </h1>
         <p className="mt-2 text-sm text-ink-muted">
           Sign in to see your log.

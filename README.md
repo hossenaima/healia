@@ -1,4 +1,4 @@
-# Healia
+# Helia
 
 A personal health log: a morning weigh-in with a progress chart, and a daily
 meal log that can estimate calories from a plain-language description.

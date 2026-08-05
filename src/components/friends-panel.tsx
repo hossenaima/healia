@@ -71,14 +71,14 @@ export function FriendsPanel({
       )}
 
       <section className="mt-6" aria-label="Friends">
-        <h2 className="eyebrow">Friends</h2>
-
+        {/* No heading on an empty list — the page title already says Friends,
+            and a second one above one sentence is just a louder nothing. */}
         {friends.length === 0 ? (
-          <p className="mt-3 text-sm text-ink-muted">
+          <p className="text-sm text-ink-muted">
             No friends yet. Add someone by the name they signed up with.
           </p>
         ) : (
-          <ul className="mt-3 space-y-3">
+          <ul className="space-y-3">
             {friends.map((f) => (
               <FriendCard key={f.id} friend={f} units={units} />
             ))}

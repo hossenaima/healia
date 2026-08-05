@@ -43,9 +43,21 @@ On **iPhone**, notifications only reach apps on the Home Screen, never Safari
 tabs. Open Helia in Safari, tap Share, then **Add to Home Screen**, and turn
 reminders on from there. Settings says so on its own if you have not yet.
 
-A `vercel.json` cron hits `/api/cron/reminders` every hour; the route resolves
-each account's local hour and notifies only the ones due. It is guarded by
-`CRON_SECRET`.
+`/api/cron/reminders` does the work: it resolves each account's local hour and
+notifies only the ones due. It is guarded by `CRON_SECRET` and is idempotent
+per day, so calling it repeatedly cannot produce a second notification.
+
+The hourly trigger is `.github/workflows/reminders.yml`, because Vercel's Hobby
+plan allows only one cron run per day and one run a day can only serve one
+timezone. Add two repository secrets under **Settings → Secrets and variables →
+Actions** for it to work:
+
+| Secret | Value |
+| --- | --- |
+| `APP_URL` | `https://helia-plum.vercel.app` (no trailing slash) |
+| `CRON_SECRET` | the same value as the Vercel environment variable |
+
+`vercel.json` keeps a daily run at 12:00 UTC as a backstop.
 
 ## Running it locally
 

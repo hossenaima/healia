@@ -48,6 +48,10 @@ model User {
 
   /// Local hour (0–23) to send the weigh-in reminder. Null means no reminder.
   reminderHour Int?
+  /// Day key of the last reminder actually sent. The schedulers that call the
+  /// reminder route are all at-least-once, so this is what keeps a retry from
+  /// becoming a second notification.
+  lastRemindedOn String?
 
   weightEntries WeightEntry[]
   meals         Meal[]

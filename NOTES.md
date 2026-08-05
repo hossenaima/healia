@@ -174,10 +174,15 @@ it the app still works and the button explains why it is disabled.
   copy — keep it that way.
 - `requestFriendAction` returns the same message whether or not the name
   exists, so the form cannot be used to discover who has an account.
-- Reminders run as an **hourly** Vercel cron, not a daily one: "8am" is a
-  different instant for every account, so each pass resolves each person's
-  local hour and notifies only those whose hour it currently is and who have
-  not already logged.
+- Reminders need an **hourly** sweep, not a daily one: "8am" is a different
+  instant for every account, so a once-a-day schedule can only ever serve one
+  timezone. Vercel's Hobby plan caps crons at one run per day and rejects the
+  deploy outright for anything faster, so the hourly trigger is a GitHub
+  Actions workflow and the Vercel cron is only a daily backstop.
+- Every scheduler that can reach that route is at-least-once, and two of them
+  can overlap, so `User.lastRemindedOn` makes the route idempotent per day.
+  Calling it repeatedly is safe by design — that is what lets a free scheduler
+  drive it.
 - `/api/cron/*` is exempt in `proxy.ts` — it authenticates with `CRON_SECRET`,
   and a redirect to `/login` would turn a failed cron into a silent 307.
 - `/sw.js`, `/manifest.webmanifest`, and `/icon-*.png` are exempt too: the OS
@@ -198,5 +203,8 @@ it the app still works and the button explains why it is disabled.
 - Signup is still open; close it with `ALLOW_SIGNUP=false` once the second
   person has an account.
 - The steps-driven calorie bar is deferred, not dropped.
+- The reminder workflow needs two GitHub repo secrets, `APP_URL` and
+  `CRON_SECRET`. Without them the hourly sweep fails silently and only the
+  daily Vercel backstop runs.
 - Friend requests and cheers surface as a count on the Friends tab. They do not
   send a push — only the weigh-in reminder does.

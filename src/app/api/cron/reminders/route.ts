@@ -4,13 +4,15 @@ import { dayKeyIn, isValidTimezone, todayIn } from "@/lib/dates";
 import { pushToUser } from "@/lib/push";
 
 /**
- * Hourly reminder sweep.
+ * Reminder sweep. Meant to be called every hour — see `.github/workflows` —
+ * because "8am" is a different instant for every account, so a once-a-day
+ * schedule could only ever serve one timezone.
  *
- * Runs every hour rather than once a day because "9am" means a different
- * instant for every account. Each pass asks what the local hour is for each
- * person and only notifies the ones whose chosen hour it currently is — and
- * only if they have not already logged, since a reminder to do something you
- * have done is just noise.
+ * Safe to call as often as anything likes. Each pass sends only to people
+ * whose chosen local hour it currently is, who have not already logged, and
+ * who have not already been reminded today. Every scheduler that can reach
+ * this route is at-least-once, so that last condition is what stands between
+ * a retry and a second buzz in someone's pocket.
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -24,11 +26,17 @@ export async function GET(request: NextRequest) {
 
   const candidates = await prisma.user.findMany({
     where: { reminderHour: { not: null }, pushSubscriptions: { some: {} } },
-    select: { id: true, timezone: true, reminderHour: true },
+    select: {
+      id: true,
+      timezone: true,
+      reminderHour: true,
+      lastRemindedOn: true,
+    },
   });
 
   let notified = 0;
   let skippedAlreadyLogged = 0;
+  let skippedAlreadySent = 0;
 
   for (const user of candidates) {
     const zone = isValidTimezone(user.timezone) ? user.timezone : "UTC";
@@ -42,6 +50,11 @@ export async function GET(request: NextRequest) {
     if (localHour !== user.reminderHour) continue;
 
     const today = dayKeyIn(now, zone);
+    if (user.lastRemindedOn === today) {
+      skippedAlreadySent++;
+      continue;
+    }
+
     const already = await prisma.weightEntry.findUnique({
       where: { userId_date: { userId: user.id, date: today } },
       select: { date: true },
@@ -57,7 +70,13 @@ export async function GET(request: NextRequest) {
       url: "/",
       tag: "weigh-in",
     });
-    if (result.sent > 0) notified++;
+    if (result.sent > 0) {
+      notified++;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastRemindedOn: today },
+      });
+    }
   }
 
   return NextResponse.json({
@@ -65,6 +84,7 @@ export async function GET(request: NextRequest) {
     checked: candidates.length,
     notified,
     skippedAlreadyLogged,
+    skippedAlreadySent,
     at: todayIn("UTC"),
   });
 }

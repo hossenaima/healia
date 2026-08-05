@@ -1,0 +1,22 @@
+# Vercel's Hobby plan allows one cron run per day, and one run a day can only
+# ever serve one timezone. This calls the same route hourly instead; the route
+# decides who is actually due and will not send twice in a day.
+name: Weigh-in reminders
+
+on:
+  schedule:
+    - cron: "5 * * * *" # a few minutes past, when GitHub's queue is quieter
+  workflow_dispatch: # so it can be fired by hand to test
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the reminder sweep
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/reminders"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

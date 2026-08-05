@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import type { FormState } from "@/app/actions/auth";
 
 const INITIAL: FormState = {};
@@ -16,13 +16,22 @@ export function PinForm({
 }) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const isSignup = mode === "signup";
+  const tzRef = useRef<HTMLInputElement>(null);
+
+  // Filled after mount: the server cannot know the visitor's zone.
+  useEffect(() => {
+    if (tzRef.current) {
+      tzRef.current.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
+  }, []);
 
   return (
     <form action={formAction} className="mt-8 space-y-5">
       {next && <input type="hidden" name="next" value={next} />}
+      <input ref={tzRef} type="hidden" name="timezone" />
 
       <div>
-        <label htmlFor="name" className="eyebrow">
+        <label htmlFor="name" className="eyebrow block">
           Name
         </label>
         <input
@@ -90,7 +99,7 @@ function PinField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="eyebrow">
+      <label htmlFor={id} className="eyebrow block">
         {label}
       </label>
       <input

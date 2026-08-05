@@ -134,7 +134,7 @@ export function MealCard({ meal }: { meal: MealCardMeal }) {
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="eyebrow ml-auto !inline transition-colors hover:!text-ink"
+            className="eyebrow ml-auto transition-colors hover:!text-ink"
           >
             {open ? "Hide working" : "Show working"}
           </button>
@@ -318,7 +318,7 @@ function PrecisionBadge({ precision }: { precision: string }) {
   const exact = precision === "exact";
   return (
     <span
-      className="eyebrow !inline-flex items-center gap-1.5"
+      className="eyebrow inline-flex items-center gap-1.5"
       title={
         exact
           ? "Read off a label, or corrected by you."

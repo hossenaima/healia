@@ -52,7 +52,7 @@ export function MealForm({
         "
       />
 
-      <label htmlFor="note" className="eyebrow mt-5 block">
+      <label htmlFor="note" className="eyebrow block mt-5 block">
         What you ate
       </label>
       <textarea
@@ -174,7 +174,7 @@ function GramField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="eyebrow !flex items-center gap-1.5">
+      <label htmlFor={id} className="eyebrow flex items-center gap-1.5">
         <span
           aria-hidden
           className="inline-block size-2 rounded-full"

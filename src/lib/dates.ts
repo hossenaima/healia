@@ -2,11 +2,24 @@
  * Day keys are "YYYY-MM-DD" in the *user's* timezone.
  *
  * The server may well run in UTC while the user logs a late-night meal, which
- * would otherwise file it under tomorrow. Server-side code resolves "today"
- * through APP_TIMEZONE; client-side code uses the browser's actual timezone.
+ * would otherwise file it under tomorrow. Every account stores its own IANA
+ * zone, captured from the browser at sign-in, and "today" is resolved against
+ * that rather than against one server-wide setting.
  */
 
-export const APP_TIMEZONE = process.env.APP_TIMEZONE || "America/New_York";
+/** Only a fallback now — each account carries its own zone. */
+export const DEFAULT_TIMEZONE = process.env.APP_TIMEZONE || "America/New_York";
+
+/** Rejects anything the platform cannot resolve, so a bad value cannot poison
+ *  every date the account renders. */
+export function isValidTimezone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -33,9 +46,9 @@ export function dayKeyIn(date: Date, timeZone: string): string {
   }).format(date);
 }
 
-/** Today's day key on the server, per APP_TIMEZONE. */
-export function serverToday(): string {
-  return dayKeyIn(new Date(), APP_TIMEZONE);
+/** Today's day key for a given account. */
+export function todayIn(timezone: string): string {
+  return dayKeyIn(new Date(), isValidTimezone(timezone) ? timezone : DEFAULT_TIMEZONE);
 }
 
 /** Today's day key in the browser's local timezone. */

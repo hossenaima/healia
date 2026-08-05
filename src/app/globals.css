@@ -127,9 +127,11 @@ body {
 }
 
 /* Small structural labels: the instrument-panel voice. */
+/* Type only — deliberately sets no `display`. It did once, to stop a label
+   colliding with its input, and that declaration silently overrode `flex` on
+   every element that combined the two, breaking nav centring. Callers that
+   need block say so. */
 .eyebrow {
-  /* Block by default: an inline <label> collides with the input beneath it. */
-  display: block;
   font-weight: 700;
   font-size: 0.75rem;
   letter-spacing: 0.01em;

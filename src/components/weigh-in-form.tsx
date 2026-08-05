@@ -8,11 +8,12 @@ import type { Units } from "@/lib/units";
 const INITIAL: ActionResult = { ok: false };
 
 export function WeighInForm({
-  serverToday,
+  today,
   existing,
   units,
 }: {
-  serverToday: string;
+  /** Resolved from the account's timezone on the server. */
+  today: string;
   /** Today's weight in display units, if already logged. */
   existing: number | null;
   units: Units;
@@ -21,7 +22,7 @@ export function WeighInForm({
 
   // The server's idea of "today" comes from APP_TIMEZONE; the browser knows the
   // real one. Start with the server value so markup matches, then correct.
-  const [date, setDate] = useState(serverToday);
+  const [date, setDate] = useState(today);
   useEffect(() => setDate(clientToday()), []);
 
   const [value, setValue] = useState(existing === null ? "" : String(existing));
@@ -32,7 +33,7 @@ export function WeighInForm({
       <input type="hidden" name="date" value={date} />
 
       <div className="rounded-xl border border-rule bg-surface p-5">
-        <label htmlFor="weight" className="eyebrow">
+        <label htmlFor="weight" className="eyebrow block">
           {editing ? "Correct this morning" : "This morning"}
         </label>
         <p className="mt-1 text-sm text-ink-muted">{formatDayLong(date)}</p>

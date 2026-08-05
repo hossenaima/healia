@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { currentUser, hasAnyUser } from "@/lib/auth";
-import { serverToday, formatDayShort } from "@/lib/dates";
+import { todayIn, formatDayShort } from "@/lib/dates";
 import { formatDelta, fromLbs, formatWeight, type Units } from "@/lib/units";
 import { Shell } from "@/components/shell";
 import { WeighInForm } from "@/components/weigh-in-form";
@@ -32,7 +32,7 @@ export default async function WeightPage() {
 
   // Only the last couple of days of meals are needed: the banner explains an
   // overnight jump, so anything older cannot be the cause.
-  const latestDate = entries.at(-1)?.date ?? serverToday();
+  const latestDate = entries.at(-1)?.date ?? todayIn(user.timezone);
   const recentMeals = await prisma.meal.findMany({
     where: {
       userId: user.id,
@@ -42,7 +42,7 @@ export default async function WeightPage() {
   });
 
   const { units, goalWeightLbs } = user;
-  const today = serverToday();
+  const today = todayIn(user.timezone);
 
   const latest = entries.at(-1) ?? null;
   const previous = entries.at(-2) ?? null;
@@ -184,7 +184,7 @@ export default async function WeightPage() {
       )}
 
       <WeighInForm
-        serverToday={today}
+        today={today}
         existing={
           todayEntry ? round1(fromLbs(todayEntry.weightLbs, units)) : null
         }

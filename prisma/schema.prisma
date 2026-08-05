@@ -34,6 +34,10 @@ model User {
   startWeightLbs Float?
   heightInches   Float?
   units          String @default("lb") // "lb" | "kg"
+  /// IANA zone, captured from the browser at sign-in. Decides when this
+  /// person's day rolls over — a shared server default gets it wrong for
+  /// anyone who is not in that zone.
+  timezone       String @default("America/New_York")
 
   /// Daily targets, set by hand. Deliberately not derived from height and
   /// weight: population formulas can be off by hundreds of calories, and a

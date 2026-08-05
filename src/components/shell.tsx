@@ -36,7 +36,7 @@ export function Shell({
       <Nav />
 
       {/* Bottom padding clears the fixed mobile nav bar. */}
-      <main className="mx-auto w-full max-w-2xl flex-1 px-5 pb-28 pt-7 md:px-6 md:pb-16">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-5 pt-7 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-6 md:pb-16">
         <h1 className="settle font-cond text-[2rem] font-bold leading-none tracking-tight">
           {title}
         </h1>

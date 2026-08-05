@@ -22,11 +22,12 @@ export function Nav() {
       aria-label="Sections"
       className="
         glass fixed inset-x-0 bottom-0 z-20 !rounded-none
-        pb-[env(safe-area-inset-bottom)]
+        pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]
+        pr-[env(safe-area-inset-right)]
         md:static md:!bg-transparent md:!shadow-none md:!backdrop-blur-none md:pb-0 md:before:hidden
       "
     >
-      <ul className="mx-auto flex max-w-2xl md:gap-1 md:px-6">
+      <ul className="mx-auto flex max-w-2xl px-2 md:gap-1 md:px-6">
         {LINKS.map((link) => {
           const active =
             link.href === "/"

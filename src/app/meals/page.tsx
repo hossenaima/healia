@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
-import { addDays, formatDayLong, isDayKey, serverToday } from "@/lib/dates";
+import { addDays, formatDayLong, isDayKey, todayIn } from "@/lib/dates";
 import { getEstimator } from "@/lib/ai/estimator";
 import { mealNutrition, sumNutrition } from "@/lib/nutrition";
 import { Shell } from "@/components/shell";
@@ -17,8 +17,8 @@ export default async function MealsPage(props: PageProps<"/meals">) {
 
   const { d } = await props.searchParams;
   const requested = typeof d === "string" && isDayKey(d) ? d : null;
-  const date = requested ?? serverToday();
-  const today = serverToday();
+  const date = requested ?? todayIn(user.timezone);
+  const today = todayIn(user.timezone);
 
   // The trailing week is fetched alongside the day so the rolling buffer can be
   // computed without a second round trip.

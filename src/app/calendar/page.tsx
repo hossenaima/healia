@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
-import { serverToday } from "@/lib/dates";
+import { todayIn } from "@/lib/dates";
 import { weighInStreak } from "@/lib/calendar";
 import { Shell } from "@/components/shell";
 import { WeightCalendar } from "@/components/weight-calendar";
@@ -21,7 +21,7 @@ export default async function CalendarPage() {
     select: { date: true, weightLbs: true },
   });
 
-  const today = serverToday();
+  const today = todayIn(user.timezone);
   const streak = weighInStreak(
     entries.map((e) => e.date),
     today,

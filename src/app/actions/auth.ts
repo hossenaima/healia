@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { isValidTimezone } from "@/lib/dates";
 import {
   endSession,
   hashPin,
@@ -41,7 +42,7 @@ export async function signupAction(
 
   const { hash, salt } = await hashPin(pin);
   const user = await prisma.user.create({
-    data: { name, handle, pinHash: hash, pinSalt: salt },
+    data: { name, handle, pinHash: hash, pinSalt: salt, ...timezoneFrom(formData) },
   });
 
   await startSession(user.id);
@@ -66,9 +67,21 @@ export async function loginAction(
   if (!user) return rejected;
   if (!(await verifyPin(pin, user.pinHash, user.pinSalt))) return rejected;
 
+  // Refreshed on every sign-in, so the day boundary follows you when you travel.
+  const tz = timezoneFrom(formData);
+  if (tz.timezone && tz.timezone !== user.timezone) {
+    await prisma.user.update({ where: { id: user.id }, data: tz });
+  }
+
   await startSession(user.id);
   // Only same-site relative paths, so `?next=` cannot bounce elsewhere.
   redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+}
+
+/** The browser reports its own zone; anything unresolvable is ignored. */
+function timezoneFrom(formData: FormData): { timezone?: string } {
+  const tz = String(formData.get("timezone") ?? "").trim();
+  return tz && isValidTimezone(tz) ? { timezone: tz } : {};
 }
 
 export async function logoutAction() {

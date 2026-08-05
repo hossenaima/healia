@@ -28,8 +28,12 @@ Live at `git@github.com:hossenaima/helia.git`.
 
 **Days are `"YYYY-MM-DD"` strings, not timestamps.** A morning weigh-in belongs
 to a calendar day in the user's timezone. Storing it as a UTC instant makes
-entries jump days across DST and travel. `APP_TIMEZONE` resolves "today" on the
-server.
+entries jump days across DST and travel.
+
+**The zone is per account, not per server.** It is captured from the browser at
+sign-in and refreshed on every sign-in, so the day boundary follows a person
+when they travel. A single `APP_TIMEZONE` was wrong the moment a second person
+joined from anywhere else; it survives only as a fallback.
 
 **Weights are always stored in pounds.** The `units` setting only changes
 display and how typed input is read.
@@ -124,6 +128,14 @@ account's data.
   have to live in a separate module.
 - Client components cannot import anything that pulls in `server-only`. Shared
   vocabulary has to live in a module the AI code does not own.
+- **A utility class must never set `display`.** `.eyebrow` set `display: block`
+  to stop a label colliding with its input; because it is defined after the
+  Tailwind import it silently beat `flex` everywhere the two were combined,
+  which is what knocked the nav labels off centre. Callers that need block say
+  so themselves.
+- **`viewport-fit=cover` is required for `env(safe-area-inset-*)` to be
+  non-zero on iPhone.** Without it the bottom bar sits under the home
+  indicator and the padding intended to clear it does nothing.
 - A submit button's `name`/`value` is serialised natively by the browser.
   Setting React state in `onClick` to record which button was pressed **races
   the submission** and can send the previous value.

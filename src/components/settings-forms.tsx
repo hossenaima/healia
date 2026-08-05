@@ -171,7 +171,7 @@ function NumberField({
 }) {
   return (
     <div className="mt-5">
-      <label htmlFor={id} className="eyebrow">
+      <label htmlFor={id} className="eyebrow block">
         {label}
       </label>
       {hint && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
@@ -203,7 +203,7 @@ function PinField({
 }) {
   return (
     <div className="mt-5 first:mt-0">
-      <label htmlFor={id} className="eyebrow">
+      <label htmlFor={id} className="eyebrow block">
         {label}
       </label>
       <input

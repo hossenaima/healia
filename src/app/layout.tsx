@@ -16,6 +16,11 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "Helia",
   description: "A daily log of weigh-ins and meals.",
+  manifest: "/manifest.webmanifest",
+  // iPhone only delivers push to a Home Screen app, so being installable is
+  // not a nicety here — it is what makes reminders possible at all.
+  appleWebApp: { capable: true, title: "Helia", statusBarStyle: "default" },
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
 };
 
 export const viewport: Viewport = {

@@ -5,6 +5,8 @@ import { getEstimator } from "@/lib/ai/estimator";
 import { fromLbs } from "@/lib/units";
 import { Shell } from "@/components/shell";
 import { GoalForm, PinChangeForm } from "@/components/settings-forms";
+import { ReminderSettings } from "@/components/reminder-settings";
+import { prisma } from "@/lib/db";
 
 export default async function SettingsPage() {
   const user = await currentUser();
@@ -12,6 +14,9 @@ export default async function SettingsPage() {
 
   const { units } = user;
   const aiEnabled = getEstimator().available;
+  const deviceCount = await prisma.pushSubscription.count({
+    where: { userId: user.id },
+  });
 
   return (
     <Shell user={user} title="Settings">
@@ -42,6 +47,15 @@ export default async function SettingsPage() {
             </p>
           )}
         </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="eyebrow">Reminders</h2>
+        <ReminderSettings
+          publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+          reminderHour={user.reminderHour}
+          deviceCount={deviceCount}
+        />
       </section>
 
       <section className="mt-10">

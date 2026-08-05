@@ -4,7 +4,9 @@ import { SESSION_COOKIE, isValidSessionToken } from "@/lib/session";
 // Optimistic gate only: it keeps signed-out visitors from seeing app shells.
 // It deliberately does not touch the database — every server action and
 // protected page re-checks with requireAuth(), which is the real boundary.
-const PUBLIC_PATHS = ["/login", "/signup"];
+// `/api/cron` carries no session — it authenticates with CRON_SECRET instead,
+// and a redirect to /login would turn a failed cron into a silent 307.
+const PUBLIC_PATHS = ["/login", "/signup", "/api/cron"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -26,7 +28,9 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except Next internals and static assets.
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/).*)",
+    // Everything except Next internals and static assets. The manifest, its
+    // icons, and the service worker are fetched by the OS during install and
+    // by the browser on update — a redirect to /login breaks both.
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|icon-|icons/).*)",
   ],
 };

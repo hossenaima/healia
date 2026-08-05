@@ -46,9 +46,17 @@ model User {
   proteinTargetG Int?
   fiberTargetG   Int?
 
+  /// Local hour (0–23) to send the weigh-in reminder. Null means no reminder.
+  reminderHour Int?
+
   weightEntries WeightEntry[]
   meals         Meal[]
   dayLogs       DayLog[]
+  sentRequests     Friendship[] @relation("requester")
+  receivedRequests Friendship[] @relation("addressee")
+  sentEncouragements     Encouragement[] @relation("encouragementFrom")
+  receivedEncouragements Encouragement[] @relation("encouragementTo")
+  pushSubscriptions PushSubscription[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -138,4 +146,60 @@ model MealItem {
   createdAt DateTime @default(now())
 
   @@index([mealId])
+}
+
+/// A mutual link between two accounts. Nothing is shared until the addressee
+/// accepts — health data is not something you opt someone else into.
+model Friendship {
+  id String @id @default(cuid())
+
+  requesterId String
+  requester   User   @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User   @relation("addressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  /// "pending" | "accepted"
+  status String @default("pending")
+
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+  @@index([requesterId, status])
+}
+
+/// A short note from one friend to another. Deliberately one-way and tiny —
+/// this is a nudge, not a chat.
+model Encouragement {
+  id String @id @default(cuid())
+
+  fromId String
+  from   User   @relation("encouragementFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  toId   String
+  to     User   @relation("encouragementTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  body   String
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([toId, createdAt])
+}
+
+/// One browser's push endpoint. A person may have several — phone, laptop —
+/// and any of them can expire, so they are disposable by design.
+model PushSubscription {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  endpoint String @unique
+  p256dh   String
+  auth     String
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

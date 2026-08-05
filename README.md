@@ -3,8 +3,10 @@
 A personal health log: a morning weigh-in with a progress chart, and a daily
 meal log that can estimate calories from a plain-language description.
 
-Built for one person. There are no accounts — the whole app sits behind a single
-PIN, and all data lives in one Postgres database (Supabase).
+Built for a couple of people. Each person signs up with a name and a PIN, and
+accounts are fully isolated — no query reads a weigh-in or a meal without
+filtering on the account it belongs to. Everything lives in one Postgres
+database (Supabase).
 
 ## Sections
 
@@ -24,8 +26,26 @@ which figures came from a model rather than from you — and tapping **Show
 working** reveals the portion it assumed for each item, which you can then
 correct or scale down.
 
-**Settings** (`/settings`) — goal weight, start weight, units (lb or kg), and
-your PIN.
+**Friends** (`/friends`) — add someone by the name they signed up with. Once
+they accept, you each see the other's latest weigh-in, their change, and their
+streak, and you can send a short note of encouragement. Friends never see each
+other's meals. Requests and unread notes show as a count on the Friends tab.
+
+**Settings** (`/settings`) — goal weight, start weight, units (lb or kg), your
+PIN, and a daily weigh-in reminder.
+
+## Reminders
+
+Pick an hour in Settings and Helia sends one notification a day at that hour in
+your own timezone — and skips it entirely on days you have already logged.
+
+On **iPhone**, notifications only reach apps on the Home Screen, never Safari
+tabs. Open Helia in Safari, tap Share, then **Add to Home Screen**, and turn
+reminders on from there. Settings says so on its own if you have not yet.
+
+A `vercel.json` cron hits `/api/cron/reminders` every hour; the route resolves
+each account's local hour and notifies only the ones due. It is guarded by
+`CRON_SECRET`.
 
 ## Running it locally
 
@@ -36,8 +56,8 @@ npx prisma migrate deploy  # creates the tables
 npm run dev                # http://localhost:3000
 ```
 
-The first visit sends you to `/setup` to choose a PIN. Nothing is reachable
-before that PIN exists.
+The first visit sends you to `/signup` to create an account. Nothing is
+reachable before one exists.
 
 ## Forgot a PIN
 
@@ -58,14 +78,25 @@ production together. Weigh-ins and meals are untouched.
 | `DATABASE_URL` | yes | Supabase **transaction pooler** URI, port `6543`, with `?pgbouncer=true`. Used by the app at runtime. |
 | `DIRECT_URL` | yes | Supabase **session pooler** URI, port `5432`. Used only to run migrations — the transaction pooler cannot run DDL. |
 | `SESSION_SECRET` | in production | Random string, 16+ characters. Signs the session cookie. The app refuses to start in production without it. |
-| `APP_TIMEZONE` | no | Your timezone, e.g. `America/New_York`. Decides which calendar day an entry belongs to when the server runs in UTC. Defaults to `America/New_York`. |
+| `APP_TIMEZONE` | no | Fallback timezone only. Each account stores its own, captured from the browser at sign-in, and that is what decides when its day rolls over. Defaults to `America/New_York`. |
 | `GEMINI_API_KEY` | no | Google AI Studio key. Turns on calorie estimation and "What can I eat?". Without it the app still works; those buttons are disabled and say why. |
 | `GEMINI_MODEL` | no | Defaults to `gemini-2.5-flash`. |
 | `ALLOW_SIGNUP` | no | Set to `false` to close signup once everyone who needs an account has one. The first account is always allowed. |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | for reminders | Public half of the VAPID pair. Without it the reminder switch says push is not configured. |
+| `VAPID_PRIVATE_KEY` | for reminders | Private half. Never sent to the browser. |
+| `VAPID_SUBJECT` | for reminders | `mailto:` address push services contact about your traffic. |
+| `CRON_SECRET` | for reminders | Bearer token the hourly cron must present. Without it `/api/cron/reminders` refuses every request. |
 
 Generate a session secret with:
 
 ```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Generate the VAPID pair and a cron secret with:
+
+```bash
+node -e "console.log(require('web-push').generateVAPIDKeys())"
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 

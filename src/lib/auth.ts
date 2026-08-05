@@ -27,6 +27,7 @@ export type SessionUser = {
   heightInches: number | null;
   units: Units;
   timezone: string;
+  reminderHour: number | null;
   calorieTarget: number | null;
   proteinTargetG: number | null;
   fiberTargetG: number | null;
@@ -93,6 +94,7 @@ export async function currentUser(): Promise<SessionUser | null> {
     heightInches: user.heightInches,
     units: user.units === "kg" ? "kg" : "lb",
     timezone: user.timezone,
+    reminderHour: user.reminderHour,
     calorieTarget: user.calorieTarget,
     proteinTargetG: user.proteinTargetG,
     fiberTargetG: user.fiberTargetG,

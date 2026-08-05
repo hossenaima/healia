@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/", label: "Weight" },
   { href: "/calendar", label: "Calendar" },
   { href: "/meals", label: "Meals" },
+  { href: "/friends", label: "Friends" },
   { href: "/settings", label: "Settings" },
 ];
 
@@ -14,7 +15,7 @@ const LINKS = [
  * Bottom bar on phones, where this app is actually used at 7am, and a top rail
  * on wider screens.
  */
-export function Nav() {
+export function Nav({ waiting = 0 }: { waiting?: number }) {
   const pathname = usePathname();
 
   return (
@@ -46,6 +47,14 @@ export function Nav() {
                 `}
               >
                 {link.label}
+                {link.href === "/friends" && waiting > 0 && (
+                  <span
+                    aria-label={`${waiting} waiting`}
+                    className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-trace px-1 text-[0.625rem] font-bold text-ground"
+                  >
+                    {waiting}
+                  </span>
+                )}
                 {active && (
                   <span
                     aria-hidden

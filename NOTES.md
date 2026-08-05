@@ -149,11 +149,39 @@ account's data.
   `DIRECT_URL` because the transaction pooler cannot run DDL.
 - Supabase's direct endpoint (`db.<ref>.supabase.co`) is IPv6-only on the free
   tier. Use the pooler hostnames.
+- **iPhone only delivers web push to a Home Screen app**, never to a Safari tab
+  — `PushManager` is simply absent there, with no way to feature-detect the
+  reason. Settings checks for iOS plus non-standalone display and says to add
+  Helia to the Home Screen, rather than showing a button that cannot work.
+- Chrome refuses the Push API in incognito, so a Puppeteer
+  `createBrowserContext()` cannot test subscribing — use the default context
+  with a `userDataDir`.
+- `pushManager.subscribe()` rejects for reasons the page cannot anticipate.
+  It is wrapped, because an unhandled rejection there took the whole settings
+  panel down with no message.
 
 ## Environment
 
 See `.env.example`. `GEMINI_API_KEY` turns on meal estimation; without
 it the app still works and the button explains why it is disabled.
+
+## Friends and reminders
+
+- A friendship is one row with a `status`, not two mirrored rows. Both the
+  requester and addressee indexes exist because both directions get queried.
+- `friendSummaries()` reads weigh-ins and streaks only. No query on the friends
+  path touches `Meal`, which is the boundary the feature promises in its own
+  copy — keep it that way.
+- `requestFriendAction` returns the same message whether or not the name
+  exists, so the form cannot be used to discover who has an account.
+- Reminders run as an **hourly** Vercel cron, not a daily one: "8am" is a
+  different instant for every account, so each pass resolves each person's
+  local hour and notifies only those whose hour it currently is and who have
+  not already logged.
+- `/api/cron/*` is exempt in `proxy.ts` — it authenticates with `CRON_SECRET`,
+  and a redirect to `/login` would turn a failed cron into a silent 307.
+- `/sw.js`, `/manifest.webmanifest`, and `/icon-*.png` are exempt too: the OS
+  fetches them during install, outside any session.
 
 ## Operational notes
 
@@ -169,3 +197,6 @@ it the app still works and the button explains why it is disabled.
   pushes do not auto-deploy yet).
 - Signup is still open; close it with `ALLOW_SIGNUP=false` once the second
   person has an account.
+- The steps-driven calorie bar is deferred, not dropped.
+- Friend requests and cheers surface as a count on the Friends tab. They do not
+  send a push — only the weigh-in reminder does.

@@ -1,16 +1,26 @@
 import { Nav } from "@/components/nav";
 import { logoutAction } from "@/app/actions/auth";
+import { prisma } from "@/lib/db";
 import type { SessionUser } from "@/lib/auth";
 
-export function Shell({
+export async function Shell({
   user,
   title,
   children,
 }: {
-  user: Pick<SessionUser, "name">;
+  user: Pick<SessionUser, "id" | "name">;
   title: string;
   children: React.ReactNode;
 }) {
+  // A cheer nobody notices is a cheer that did not happen, and Friends is the
+  // one tab with something that arrives while you are elsewhere.
+  const [requests, unread] = await Promise.all([
+    prisma.friendship.count({
+      where: { addresseeId: user.id, status: "pending" },
+    }),
+    prisma.encouragement.count({ where: { toId: user.id, readAt: null } }),
+  ]);
+
   return (
     <>
       <header className="sticky top-0 z-20 glass !rounded-none !shadow-none md:bg-transparent md:backdrop-blur-none">
@@ -33,7 +43,7 @@ export function Shell({
         </div>
       </header>
 
-      <Nav />
+      <Nav waiting={requests + unread} />
 
       {/* Bottom padding clears the fixed mobile nav bar. */}
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 pt-7 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-6 md:pb-16">

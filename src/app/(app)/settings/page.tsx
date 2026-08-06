@@ -6,6 +6,7 @@ import { fromLbs } from "@/lib/units";
 import { PageTitle } from "@/components/page-title";
 import { GoalForm, PinChangeForm } from "@/components/settings-forms";
 import { NotificationSettings } from "@/components/notification-settings";
+import { logoutAction } from "@/app/actions/auth";
 import { prisma } from "@/lib/db";
 
 export default async function SettingsPage() {
@@ -53,7 +54,6 @@ export default async function SettingsPage() {
       <section className="mt-10">
         <h2 className="eyebrow">Notifications</h2>
         <NotificationSettings
-          publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
           notifyWeighIn={user.notifyWeighIn}
           notifyFriends={user.notifyFriends}
           reminderHour={user.reminderHour}
@@ -64,6 +64,23 @@ export default async function SettingsPage() {
       <section className="mt-10">
         <h2 className="eyebrow">PIN</h2>
         <PinChangeForm />
+      </section>
+
+      <section className="mt-10">
+        <h2 className="eyebrow">Account</h2>
+        <div className="card mt-4 flex items-center justify-between gap-3 p-5">
+          <div className="min-w-0">
+            <p className="text-sm font-bold">Signed in as {user.name}</p>
+            <p className="mt-0.5 text-xs text-ink-muted">
+              You will need your PIN to get back in.
+            </p>
+          </div>
+          <form action={logoutAction}>
+            <button type="submit" className="btn btn-quiet shrink-0 !py-2">
+              Sign out
+            </button>
+          </form>
+        </div>
       </section>
 
       <section className="mt-10">

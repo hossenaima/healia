@@ -1,36 +1,24 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import {
-  setNotificationPrefsAction,
-  subscribeAction,
-  unsubscribeAction,
-} from "@/app/actions/notifications";
-
-type Support =
-  | "checking"
-  | "ready"
-  | "needs-install" // iOS Safari outside a Home Screen app
-  | "unsupported";
+import { useState, useTransition } from "react";
+import { setNotificationPrefsAction } from "@/app/actions/notifications";
+import { usePush } from "@/lib/use-push";
 
 export function NotificationSettings({
-  publicKey,
   notifyWeighIn,
   notifyFriends,
   reminderHour,
   deviceCount,
 }: {
-  publicKey: string | null;
   notifyWeighIn: boolean;
   notifyFriends: boolean;
   reminderHour: number;
   deviceCount: number;
 }) {
-  const [support, setSupport] = useState<Support>("checking");
-  const [subscribed, setSubscribed] = useState(false);
-  const [devices, setDevices] = useState(deviceCount);
-  const [status, setStatus] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  // Subscribing is shared with the header bell — see `usePush`. One flow with
+  // this many quiet failure modes should not have two implementations.
+  const { support, subscribed, devices, busy, status, setStatus, enable, disable } =
+    usePush(deviceCount);
   const [, startWorking] = useTransition();
 
   // Held locally so a toggle answers the tap rather than the round trip.
@@ -38,120 +26,12 @@ export function NotificationSettings({
   const [friends, setFriends] = useState(notifyFriends);
   const [hour, setHour] = useState(reminderHour);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      const hasApi =
-        "serviceWorker" in navigator &&
-        "PushManager" in window &&
-        "Notification" in window;
-
-      // iOS only delivers web push to a Home Screen app. In a normal Safari tab
-      // PushManager is missing entirely, so say why rather than fail silently.
-      const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const standalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        // Safari's own flag, not in the standard Navigator type.
-        (navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-      if (!hasApi) {
-        if (!cancelled) {
-          setSupport(iOS && !standalone ? "needs-install" : "unsupported");
-        }
-        return;
-      }
-
-      const reg = await navigator.serviceWorker.getRegistration();
-      const existing = await reg?.pushManager.getSubscription();
-      if (cancelled) return;
-      setSubscribed(Boolean(existing));
-      setSupport("ready");
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  async function enable() {
-    if (!publicKey) {
-      setStatus("No push key is configured on the server.");
-      return;
-    }
-    setStatus(null);
-    setBusy(true);
-
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setStatus(
-          permission === "denied"
-            ? "Notifications are blocked for Helia in your browser settings."
-            : "Notifications were not allowed.",
-        );
-        return;
-      }
-
-      // Subscribing fails for reasons the page cannot see coming — a private
-      // window, a profile with push disabled, no route to the push service.
-      // Say so, rather than leaving a switch that appears to do nothing.
-      let sub: PushSubscription;
-      try {
-        const reg = await navigator.serviceWorker.register("/sw.js");
-        await navigator.serviceWorker.ready;
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        });
-      } catch (error) {
-        setStatus(
-          `This browser would not set up notifications: ${
-            error instanceof Error ? error.message : "unknown error"
-          }`,
-        );
-        return;
-      }
-
-      const json = sub.toJSON();
-      const result = await subscribeAction({
-        endpoint: sub.endpoint,
-        p256dh: json.keys?.p256dh ?? "",
-        auth: json.keys?.auth ?? "",
-      });
-
-      if (!result.ok) {
-        setStatus(result.error ?? "Could not save this device.");
-        return;
-      }
-
-      setSubscribed(true);
-      setDevices((n) => n + 1);
-      // The first device turns both kinds on server-side; match that here.
-      if (devices === 0) {
-        setWeighIn(true);
-        setFriends(true);
-      }
-      setStatus(null);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function disable() {
-    setBusy(true);
-    try {
-      const reg = await navigator.serviceWorker.getRegistration();
-      const sub = await reg?.pushManager.getSubscription();
-      if (sub) {
-        await sub.unsubscribe();
-        await unsubscribeAction(sub.endpoint);
-      }
-      setSubscribed(false);
-      setDevices((n) => Math.max(0, n - 1));
-      setStatus(null);
-    } finally {
-      setBusy(false);
+  async function turnOn() {
+    const ok = await enable();
+    // The first device turns both kinds on server-side; match that here.
+    if (ok && devices === 0) {
+      setWeighIn(true);
+      setFriends(true);
     }
   }
 
@@ -210,7 +90,7 @@ export function NotificationSettings({
         </div>
         <button
           type="button"
-          onClick={subscribed ? disable : enable}
+          onClick={subscribed ? disable : turnOn}
           disabled={busy}
           className={`btn !rounded-full shrink-0 !py-2 ${
             subscribed ? "btn-soft" : "btn-primary"
@@ -320,12 +200,4 @@ function formatHour(h: number) {
   const suffix = h < 12 ? "am" : "pm";
   const twelve = h % 12 === 0 ? 12 : h % 12;
   return `${twelve}:00 ${suffix}`;
-}
-
-/** VAPID keys are base64url; PushManager wants raw bytes. */
-function urlBase64ToUint8Array(base64: string) {
-  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
-  const normalised = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(normalised);
-  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }

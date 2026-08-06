@@ -313,6 +313,12 @@ Grouped by where they bite.
 - **A class describing how something looks must not set where it sits.** Even
   layered correctly, `position` on `.glass` is a smell — the material and the
   layout are different concerns.
+- **An absolutely positioned `::after` escapes to the viewport if its element
+  is `static`.** The tab bar was `md:static` on desktop, so the glass
+  refraction layer — `position: absolute; inset: -36px` — resolved against the
+  initial containing block instead of the bar, and washed the entire page out.
+  It only appeared once the unlayered `position: relative` stopped masking it.
+  Any element wearing `.glass`, `.card` or `.tile` must stay positioned.
 - **A dead duplicate can keep contributing.** An entire superseded `.glass`
   frost implementation sat above the lens one for weeks; the later block won
   most properties so nothing looked wrong, and it was only found while chasing

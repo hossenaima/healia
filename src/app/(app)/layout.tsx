@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { currentUser, hasAnyUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { logoutAction } from "@/app/actions/auth";
 import { Nav } from "@/components/nav";
+import { NotificationBell } from "@/components/notification-bell";
 
 export const dynamic = "force-dynamic";
 
@@ -37,37 +37,28 @@ export default async function AppLayout({
   return (
     <>
       <header className="sticky top-0 z-20 glass !rounded-none !shadow-none md:bg-transparent md:backdrop-blur-none">
-        {/* Baseline, not centre: the wordmark is larger than the pair on the
-            right, and centring three different sizes leaves none of them on a
-            shared line. */}
-        <div className="mx-auto flex max-w-2xl items-baseline justify-between gap-3 px-5 py-4 md:px-6">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-5 py-4 md:px-6">
           <span className="font-cond text-lg font-bold tracking-tight">
             Helia
           </span>
-          <div className="flex min-w-0 items-baseline gap-4">
+          <div className="flex min-w-0 items-center gap-3">
             {/* Whose log this is — the app holds more than one. Stated, not
-                emphasised: it is context, and the only action here is Lock. */}
+                emphasised: it is context, not an action. */}
             <span className="min-w-0 truncate text-sm text-ink-muted">
               {user.name}
             </span>
-            {/* `contents` so the button is the flex item. Wrapped in a form it
-                was laid out as one, and sat two pixels below the name. */}
-            <form action={logoutAction} className="contents">
-              <button
-                type="submit"
-                className="shrink-0 text-sm font-semibold text-ink-muted transition-colors hover:text-ink"
-              >
-                Lock
-              </button>
-            </form>
+            {/* Signing out moved to Settings. It is a rare, deliberate act,
+                and it does not need to sit under the thumb every morning —
+                whereas silencing a notification does. */}
+            <NotificationBell />
           </div>
         </div>
       </header>
 
       <Nav waiting={requests + unread} />
 
-      {/* Bottom padding clears the fixed mobile nav bar. */}
-      <main className="mx-auto w-full max-w-2xl flex-1 px-5 pt-7 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-6 md:pb-16">
+      {/* Bottom padding clears the fixed bar, which is now on every width. */}
+      <main className="mx-auto w-full max-w-2xl flex-1 px-5 pt-7 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-6">
         {children}
       </main>
     </>

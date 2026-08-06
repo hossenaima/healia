@@ -17,8 +17,13 @@ function isActive(pathname: string, href: string) {
 }
 
 /**
- * Bottom bar on phones, where this app is actually used at 7am, and a top rail
- * on wider screens.
+ * A bar on the bottom edge, at every width.
+ *
+ * It was a top rail on desktop, which broke twice over: `md:static` left the
+ * glass `::after` with no positioned ancestor, so its `inset: -36px`
+ * refraction resolved against the viewport and washed out the whole page. One
+ * bar in one place is also simply less to reason about — and the thumb is at
+ * the bottom on a phone, which is where this is actually used.
  *
  * The tab you press lights up on the press, not when the server answers. The
  * pathname only changes once the new route is ready, so on its own it leaves
@@ -38,12 +43,11 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
         glass fixed inset-x-0 bottom-0 z-20 !rounded-none
         pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]
         pr-[env(safe-area-inset-right)]
-        md:static md:!bg-transparent md:!shadow-none md:!backdrop-blur-none md:pb-0 md:before:hidden
       "
     >
       {/* Equal-width tabs at every size, so the marker's position is the
           index and nothing has to be measured. */}
-      <ul className="relative mx-auto flex max-w-2xl px-2 md:px-6">
+      <ul className="relative mx-auto flex max-w-2xl px-2">
         {litIndex >= 0 && (
           <span
             aria-hidden
@@ -53,7 +57,7 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
               transform: `translateX(${litIndex * 100}%)`,
             }}
           >
-            <span className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-trace md:inset-x-6 md:top-auto md:bottom-0" />
+            <span className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-trace" />
           </span>
         )}
 
@@ -70,7 +74,7 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
                 onNavigate={() => startTransition(() => setHeading(link.href))}
                 className={`
                   eyebrow relative flex items-center justify-center py-4
-                  transition-colors md:px-4 md:py-3
+                  transition-colors
                   ${lit ? "!text-ink" : "hover:!text-ink-muted"}
                 `}
               >

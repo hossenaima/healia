@@ -95,6 +95,11 @@ export function WeightChart({
   // history — or the same range read in kilograms — can span less than the
   // gap between ticks, and the axis then repeats one number down its length.
   const tickDigits = domainHi - floor < 8 ? 1 : 0;
+  // Sized to the widest label the axis will actually draw. A fixed width was
+  // fine for "180" and quietly cropped the leading digit off "180.4".
+  const axisWidth = 14 + Math.max(
+    ...[floor, domainHi].map((v) => v.toFixed(tickDigits).length),
+  ) * 7;
 
   const empty = data.length === 0;
 
@@ -198,7 +203,7 @@ export function WeightChart({
               tick={{ fill: "var(--ink-faint)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
-              width={46}
+              width={axisWidth}
               tickFormatter={(v: number) => v.toFixed(tickDigits)}
             />
 

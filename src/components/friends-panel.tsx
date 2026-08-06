@@ -49,7 +49,7 @@ export function FriendsPanel({
                   <input type="hidden" name="accept" value="0" />
                   <button
                     type="submit"
-                    className="rounded-full px-3 py-1.5 text-sm font-bold text-ink-muted transition-colors hover:text-ink"
+                    className="btn !px-3 !py-1.5 text-ink-muted hover:text-ink"
                   >
                     Ignore
                   </button>
@@ -59,7 +59,7 @@ export function FriendsPanel({
                   <input type="hidden" name="accept" value="1" />
                   <button
                     type="submit"
-                    className="rounded-full bg-ink px-4 py-1.5 text-sm font-bold text-ground transition-opacity hover:opacity-90"
+                    className="btn btn-primary !rounded-full !py-1.5"
                   >
                     Accept
                   </button>
@@ -103,7 +103,7 @@ export function FriendsPanel({
           <button
             type="submit"
             disabled={adding}
-            className="mt-5 w-full rounded-full bg-ink px-4 py-3 text-sm font-bold text-ground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="btn btn-primary !rounded-full mt-5 w-full"
           >
             {adding ? "Sending" : "Send invite"}
           </button>
@@ -191,7 +191,7 @@ function FriendCard({
               key={q}
               type="button"
               onClick={() => setBody(q)}
-              className="rounded-full bg-surface-sunk px-3 py-1.5 text-xs font-bold transition-opacity hover:opacity-80"
+              className="chip btn-soft"
             >
               {q}
             </button>
@@ -211,7 +211,7 @@ function FriendCard({
           <button
             type="submit"
             disabled={sending || body.trim() === ""}
-            className="shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-bold text-ground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="btn btn-primary !rounded-full shrink-0 !py-2"
           >
             {sending ? "…" : "Send"}
           </button>

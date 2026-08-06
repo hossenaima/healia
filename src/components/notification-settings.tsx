@@ -212,8 +212,8 @@ export function NotificationSettings({
           type="button"
           onClick={subscribed ? disable : enable}
           disabled={busy}
-          className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-opacity hover:opacity-90 disabled:opacity-40 ${
-            subscribed ? "bg-surface-sunk" : "bg-ink text-ground"
+          className={`btn !rounded-full shrink-0 !py-2 ${
+            subscribed ? "btn-soft" : "btn-primary"
           }`}
         >
           {busy ? "…" : subscribed ? "Turn off" : "Turn on"}

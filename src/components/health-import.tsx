@@ -101,11 +101,7 @@ export function HealthImport({ units }: { units: Units }) {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={phase.step === "scanning" || saving}
-        className="
-          mt-4 w-full rounded-lg border border-ink px-4 py-3 font-cond text-sm
-          font-semibold uppercase tracking-widest transition-colors
-          hover:bg-surface-sunk disabled:opacity-40
-        "
+        className="btn btn-quiet mt-4 w-full"
       >
         {phase.step === "scanning" ? "Reading export" : "Choose export.zip"}
       </button>
@@ -156,11 +152,7 @@ export function HealthImport({ units }: { units: Units }) {
             type="button"
             onClick={save}
             disabled={saving || selected.length === 0}
-            className="
-              mt-4 w-full rounded-lg bg-ink px-4 py-3 font-cond text-sm
-              font-semibold uppercase tracking-widest text-ground
-              transition-opacity hover:opacity-90 disabled:opacity-40
-            "
+            className="btn btn-primary mt-4 w-full"
           >
             {saving ? "Importing" : `Import ${selected.length} weigh-ins`}
           </button>

@@ -36,15 +36,11 @@ export function UnitSwitch({ units }: { units: Units }) {
               await setUnitsAction(option);
             });
           }}
-          className={`
-            rounded-full px-3 py-1 font-cond text-xs font-semibold uppercase
-            tracking-widest transition-colors
-            ${
-              shown === option
-                ? "bg-ink text-ground"
-                : "text-ink-muted hover:text-ink"
-            }
-          `}
+          className={`chip ${
+            shown === option
+              ? "bg-ink text-ground"
+              : "text-ink-muted hover:text-ink"
+          }`}
         >
           {option}
         </button>

@@ -51,11 +51,7 @@ export function DayTotals({
             type="button"
             onClick={() => setNet((v) => !v)}
             aria-pressed={net}
-            className="
-              shrink-0 rounded-full bg-surface-sunk px-3 py-1.5 font-cond
-              text-[0.7rem] font-semibold uppercase tracking-widest
-              text-ink-muted transition-colors hover:text-ink
-            "
+            className="chip shrink-0 bg-surface-sunk text-ink-muted hover:text-ink"
           >
             {net ? "Show raw" : "Show net"}
           </button>

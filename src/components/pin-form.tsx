@@ -68,11 +68,7 @@ export function PinForm({
       <button
         type="submit"
         disabled={pending}
-        className="
-          w-full rounded-lg bg-ink px-4 py-3 font-cond text-sm font-semibold
-          uppercase tracking-widest text-ground transition-opacity
-          hover:opacity-90 disabled:opacity-40
-        "
+        className="btn btn-primary w-full"
       >
         {pending ? "Working" : isSignup ? "Create account" : "Unlock"}
       </button>

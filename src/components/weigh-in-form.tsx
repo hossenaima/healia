@@ -25,15 +25,19 @@ export function WeighInForm({
   const [date, setDate] = useState(today);
   useEffect(() => setDate(clientToday()), []);
 
-  const [value, setValue] = useState(existing === null ? "" : String(existing));
+  // The box is for what you are about to type, never for what is already
+  // stored. Emptying it is the receipt for a save — a number left sitting
+  // there reads as nothing having happened. Today's reading is not lost: it
+  // is in the placeholder, in the ring above, and in the log below.
+  const [value, setValue] = useState("");
 
-  // The server re-renders this with a converted number when the unit changes,
-  // and with the saved number after a save. Without following that, switching
-  // to kg leaves a pounds figure sitting under a "kg" label.
+  // Whatever the server last sent back, in whatever unit is currently
+  // selected. When that changes — a save landed, or the unit was switched —
+  // the box clears rather than holding a stale number under a fresh label.
   const [lastSent, setLastSent] = useState(existing);
   if (lastSent !== existing) {
     setLastSent(existing);
-    setValue(existing === null ? "" : String(existing));
+    setValue("");
   }
 
   const editing = existing !== null;
@@ -56,7 +60,7 @@ export function WeighInForm({
             inputMode="decimal"
             autoComplete="off"
             enterKeyHint="done"
-            placeholder="000.0"
+            placeholder={editing ? existing.toFixed(1) : "000.0"}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             aria-describedby={state.error ? "weigh-in-error" : undefined}
@@ -83,11 +87,7 @@ export function WeighInForm({
         <button
           type="submit"
           disabled={pending || value.trim() === ""}
-          className="
-            mt-5 w-full rounded-lg bg-ink px-4 py-3 font-cond text-sm font-semibold
-            uppercase tracking-widest text-ground transition-opacity
-            hover:opacity-90 disabled:opacity-40
-          "
+          className="btn btn-primary mt-5 w-full"
         >
           {pending ? "Saving" : editing ? "Update weigh-in" : "Save weigh-in"}
         </button>
@@ -97,7 +97,10 @@ export function WeighInForm({
           role="status"
           className={`mt-3 text-sm ${state.error ? "text-up" : "text-ink-muted"}`}
         >
-          {state.error ?? (state.ok ? "Logged." : "")}
+          {state.error ??
+            (state.ok && editing
+              ? `Logged ${existing.toFixed(1)} ${units} for today.`
+              : "")}
         </p>
       </div>
     </form>

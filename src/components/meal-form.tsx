@@ -114,11 +114,7 @@ export function MealForm({
           value="0"
           onClick={() => setPendingAi(false)}
           disabled={pending || note.trim() === "" || name.trim() === ""}
-          className="
-            flex-1 rounded-lg bg-surface-sunk px-4 py-3 font-cond text-sm
-            font-semibold uppercase tracking-widest transition-opacity
-            hover:opacity-80 disabled:opacity-40
-          "
+          className="btn btn-soft flex-1"
         >
           Save meal
         </button>
@@ -136,11 +132,7 @@ export function MealForm({
               ? undefined
               : "Add GEMINI_API_KEY to your environment to turn this on."
           }
-          className="
-            flex-1 rounded-lg bg-ink px-4 py-3 font-cond text-sm font-semibold
-            uppercase tracking-widest text-ground transition-opacity
-            hover:opacity-90 disabled:opacity-40
-          "
+          className="btn btn-primary flex-1"
         >
           {pending && pendingAi ? "Estimating" : "Estimate for me"}
         </button>

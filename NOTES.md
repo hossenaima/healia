@@ -165,6 +165,25 @@ account's data.
 See `.env.example`. `GEMINI_API_KEY` turns on meal estimation; without
 it the app still works and the button explains why it is disabled.
 
+## Look
+
+- The neutral ramp is neutral. It used to carry a green cast at every step,
+  which put a second green on screen arguing with the trace and read as olive
+  rather than quiet. Colour now means data; everything else is graphite.
+- Buttons are `.btn` plus `.btn-primary` / `.btn-quiet` / `.btn-soft` in
+  `globals.css`, and small pills are `.chip`. Ten inline copies of the same
+  string used to spell this out, every one uppercase and tracked wide — set
+  against soft cards that read as shouting, and it was the loudest thing on a
+  page whose whole point is calm.
+- `.eyebrow` is 600. Nearly every label, tab and section heading wears it, and
+  at 700 the interface shouted in unison. Bold is left for data and state.
+- A disabled `.btn-primary` recedes to the sunk surface rather than dimming to
+  40%: a full-width dark button at 40% is a grey slab, and a grey slab reads
+  as broken rather than as "nothing to submit yet".
+- The header row is baseline-aligned, and the Lock form is `display: contents`
+  so the button is the flex item. Wrapped in a form it was laid out as one and
+  sat two pixels below the account name.
+
 ## Navigation
 
 - The header and tab bar live in `src/app/(app)/layout.tsx`, not in each page.
@@ -214,8 +233,13 @@ it the app still works and the button explains why it is disabled.
   rendered, which is why the switch on the Weight tab cannot leave the chart
   and the figures disagreeing — there is one value and one conversion.
 - Client inputs that mirror a server-rendered number have to follow it when it
-  changes. `WeighInForm` seeds state from a prop, so switching to kg left a
-  pounds figure under a "kg" label until it started tracking the prop.
+  changes. `WeighInForm` used to seed state from a prop and keep it, so
+  switching to kg left a pounds figure under a "kg" label. It now clears
+  whenever the server sends a different value — which doubles as the receipt
+  for a save — and shows the stored reading in the placeholder instead.
+- The chart's y-axis width is derived from the widest label it will draw. A
+  fixed 46px was fine for "180" and quietly cropped the leading digit off
+  "180.4" once narrow ranges started getting a decimal.
 
 ## Operational notes
 

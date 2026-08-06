@@ -16,15 +16,19 @@
 :root {
   color-scheme: light;
 
-  --ground: #f6f8f5; /* barely-there green cast, like the reference */
+  /* The neutrals are neutral. They used to carry a green cast at every step,
+     which put a second green on screen competing with the trace and read as
+     olive rather than quiet. Graphite with the faintest cool lean keeps the
+     calm without pretending to be a colour. */
+  --ground: #f7f9f9;
   --surface: #ffffff;
-  --surface-sunk: #eef2ec;
-  --ink: #1e2b26;
-  --ink-muted: #5f6f68;
-  --ink-faint: #9aa8a1;
-  --rule: #e8eee9;
+  --surface-sunk: #eef1f2;
+  --ink: #181d20;
+  --ink-muted: #5a656b;
+  --ink-faint: #98a2a7;
+  --rule: #e7ebec;
 
-  --on-tint: #1e2b26;
+  --on-tint: #181d20;
 
   --trace: #00907f; /* weight line */
   --goal: #9a3ba0; /* goal horizon */
@@ -38,13 +42,13 @@
   --fat: #ae5fb0;
 
   --focus: #00907f;
-  --lift: 0 1px 2px rgb(22 38 46 / 0.04), 0 4px 16px rgb(22 38 46 / 0.05);
-  --lift-sm: 0 1px 2px rgb(22 38 46 / 0.05);
+  --lift: 0 1px 2px rgb(20 26 30 / 0.04), 0 4px 16px rgb(20 26 30 / 0.05);
+  --lift-sm: 0 1px 2px rgb(20 26 30 / 0.05);
 
   --glass-tint: rgb(255 255 255 / 0.42);
   --glass-sheen: rgb(255 255 255 / 0.9);
-  --glass-shade: rgb(30 43 38 / 0.06);
-  --glass-rim: rgb(30 43 38 / 0.08);
+  --glass-shade: rgb(24 29 32 / 0.06);
+  --glass-rim: rgb(24 29 32 / 0.08);
 }
 
 /*
@@ -55,13 +59,13 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --ground: #0e1619;
-  --surface: #141c20;
-  --surface-sunk: #1b262a;
-  --ink: #e8efee;
-  --ink-muted: #a2b2b6;
-  --ink-faint: #71848a;
-  --rule: #24343a;
+  --ground: #101416;
+  --surface: #171c1f;
+  --surface-sunk: #1e2529;
+  --ink: #e9edee;
+  --ink-muted: #a3adb2;
+  --ink-faint: #737e83;
+  --rule: #262e33;
 
   --trace: #12ad94;
   --goal: #be6fc9;
@@ -77,7 +81,7 @@
   --lift: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
   --lift-sm: 0 1px 2px rgb(0 0 0 / 0.3);
 
-  --glass-tint: rgb(32 46 52 / 0.55);
+  --glass-tint: rgb(34 42 47 / 0.55);
   --glass-sheen: rgb(255 255 255 / 0.09);
   --glass-rim: rgb(255 255 255 / 0.08);
 }
@@ -110,9 +114,9 @@ body {
      fill, so this gives the panels something to sit on without adding colour
      anyone would notice as colour. */
   background-image:
-    radial-gradient(58% 42% at 8% 4%, rgb(0 144 127 / 0.18) 0%, transparent 62%),
-    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.13) 0%, transparent 58%),
-    radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.12) 0%, transparent 60%);
+    radial-gradient(58% 42% at 8% 4%, rgb(0 144 127 / 0.13) 0%, transparent 62%),
+    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.09) 0%, transparent 58%),
+    radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.09) 0%, transparent 60%);
   background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-manrope), system-ui, sans-serif;
@@ -132,9 +136,12 @@ body {
    every element that combined the two, breaking nav centring. Callers that
    need block say so. */
 .eyebrow {
-  font-weight: 700;
+  /* 600, not 700. Nearly every label, tab and section heading wears this
+     class, and at 700 the whole interface shouted in unison — with everything
+     emphasised, nothing was. */
+  font-weight: 600;
   font-size: 0.75rem;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   color: var(--ink-muted);
 }
 
@@ -275,9 +282,9 @@ body {
   inset: -36px;
   background-color: var(--ground);
   background-image:
-    radial-gradient(58% 42% at 8% 4%, rgb(0 144 127 / 0.18) 0%, transparent 62%),
-    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.13) 0%, transparent 58%),
-    radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.12) 0%, transparent 60%);
+    radial-gradient(58% 42% at 8% 4%, rgb(0 144 127 / 0.13) 0%, transparent 62%),
+    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.09) 0%, transparent 58%),
+    radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.09) 0%, transparent 60%);
   background-attachment: fixed;
   filter: url(#liquid-warp);
   opacity: 0.92;
@@ -287,6 +294,88 @@ body {
 
 .settle {
   animation: settle 420ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+/*
+ * Buttons.
+ *
+ * Ten copies of the same string used to spell this out inline, every one of
+ * them uppercase and tracked wide. Set against soft cards and a quiet
+ * palette, that read as shouting, and it was the loudest thing on a page
+ * whose whole point is calm. Sentence case at 600, defined once.
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+.btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--ground);
+}
+
+/* A full-width dark button at 40% is a grey slab, and a grey slab reads as
+   broken rather than as "nothing to submit yet". Recede instead of dim. */
+.btn-primary:disabled {
+  background: var(--surface-sunk);
+  color: var(--ink-faint);
+  opacity: 1;
+}
+
+.btn-primary:not(:disabled):hover {
+  opacity: 0.88;
+}
+
+/* Outline, for the second choice beside a primary. */
+.btn-quiet {
+  border: 1px solid var(--rule);
+  color: var(--ink);
+}
+
+.btn-quiet:not(:disabled):hover {
+  background: var(--surface-sunk);
+}
+
+/* Filled but recessive — a peer action that is not the main one. */
+.btn-soft {
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+.btn-soft:not(:disabled):hover {
+  background: var(--rule);
+}
+
+/* Small pill: segmented controls and inline switches. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
 }
 
 .nav-hint {

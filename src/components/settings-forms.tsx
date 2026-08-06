@@ -41,9 +41,7 @@ export function GoalForm({
             <label
               key={option}
               className="
-                cursor-pointer rounded-full border border-rule px-4 py-1.5
-                font-cond text-xs font-semibold uppercase tracking-widest
-                text-ink-muted transition-colors
+                chip cursor-pointer border border-rule text-ink-muted
                 has-[:checked]:border-ink has-[:checked]:bg-ink
                 has-[:checked]:text-ground
               "
@@ -116,11 +114,7 @@ export function GoalForm({
       <button
         type="submit"
         disabled={pending}
-        className="
-          mt-6 w-full rounded-lg bg-ink px-4 py-3 font-cond text-sm font-semibold
-          uppercase tracking-widest text-ground transition-opacity
-          hover:opacity-90 disabled:opacity-40
-        "
+        className="btn btn-primary mt-6 w-full"
       >
         {pending ? "Saving" : "Save goal"}
       </button>
@@ -142,11 +136,7 @@ export function PinChangeForm() {
       <button
         type="submit"
         disabled={pending}
-        className="
-          mt-6 w-full rounded-lg border border-ink px-4 py-3 font-cond text-sm
-          font-semibold uppercase tracking-widest transition-colors
-          hover:bg-surface-sunk disabled:opacity-40
-        "
+        className="btn btn-quiet mt-6 w-full"
       >
         {pending ? "Updating" : "Change PIN"}
       </button>

@@ -37,17 +37,25 @@ export default async function AppLayout({
   return (
     <>
       <header className="sticky top-0 z-20 glass !rounded-none !shadow-none md:bg-transparent md:backdrop-blur-none">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-5 py-4 md:px-6">
+        {/* Baseline, not centre: the wordmark is larger than the pair on the
+            right, and centring three different sizes leaves none of them on a
+            shared line. */}
+        <div className="mx-auto flex max-w-2xl items-baseline justify-between gap-3 px-5 py-4 md:px-6">
           <span className="font-cond text-lg font-bold tracking-tight">
             Helia
           </span>
-          <div className="flex min-w-0 items-center gap-3">
-            {/* Whose log this is — the app holds more than one. */}
-            <span className="eyebrow truncate !text-ink-muted">{user.name}</span>
-            <form action={logoutAction}>
+          <div className="flex min-w-0 items-baseline gap-4">
+            {/* Whose log this is — the app holds more than one. Stated, not
+                emphasised: it is context, and the only action here is Lock. */}
+            <span className="min-w-0 truncate text-sm text-ink-muted">
+              {user.name}
+            </span>
+            {/* `contents` so the button is the flex item. Wrapped in a form it
+                was laid out as one, and sat two pixels below the name. */}
+            <form action={logoutAction} className="contents">
               <button
                 type="submit"
-                className="eyebrow transition-colors hover:!text-ink"
+                className="shrink-0 text-sm font-semibold text-ink-muted transition-colors hover:text-ink"
               >
                 Lock
               </button>

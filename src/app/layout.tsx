@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f6f8f5",
+  themeColor: "#f7f9f9",
   // Without this, `env(safe-area-inset-*)` resolves to 0 on iPhone and the
   // bottom bar sits under the home indicator.
   viewportFit: "cover",

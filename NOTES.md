@@ -167,6 +167,12 @@ it the app still works and the button explains why it is disabled.
 
 ## Look
 
+- The trace teal is deliberately under the `dataviz` validator's categorical
+  chroma floor (0.075 against a floor of 0.1). That floor exists to keep many
+  series apart by hue; there is one series here, and the goal line beside it is
+  dashed and directly labelled. Muting it also took contrast from 3.97:1 to
+  5.29:1. `--goal` was left saturated on purpose — it is what holds ΔE 8.5
+  separation from the trace for a deutan reader.
 - The neutral ramp is neutral. It used to carry a green cast at every step,
   which put a second green on screen arguing with the trace and read as olive
   rather than quiet. Colour now means data; everything else is graphite.

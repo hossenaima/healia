@@ -30,18 +30,25 @@
 
   --on-tint: #181d20;
 
-  --trace: #00907f; /* weight line */
+  /* The one colour on screen, so it is a quiet one: same teal hue, about a
+     third less chroma and a step darker, which also lifts it from 3.97:1 to
+     5.29:1 against white. Deliberately under the categorical chroma floor a
+     multi-series palette would need — there is one series here, and the goal
+     line beside it is dashed and labelled. */
+  --trace: #2e776b; /* weight line */
+  /* Left saturated on purpose: it is what keeps the goal line separable from
+     the trace for a deutan reader (ΔE 8.5). It appears once, dashed. */
   --goal: #9a3ba0; /* goal horizon */
 
-  --down: #2f6f45; /* moving toward goal */
-  --up: #a2472c; /* moving away */
+  --down: #3a6d4a; /* moving toward goal */
+  --up: #97503c; /* moving away */
 
   /* Macro breakdown. Paired with gram labels, never carrying meaning alone. */
   --protein: #4e86e0;
   --carbs: #bf8c22;
   --fat: #ae5fb0;
 
-  --focus: #00907f;
+  --focus: #2e776b;
   --lift: 0 1px 2px rgb(20 26 30 / 0.04), 0 4px 16px rgb(20 26 30 / 0.05);
   --lift-sm: 0 1px 2px rgb(20 26 30 / 0.05);
 
@@ -67,17 +74,17 @@
   --ink-faint: #737e83;
   --rule: #262e33;
 
-  --trace: #12ad94;
+  --trace: #59a396;
   --goal: #be6fc9;
 
-  --down: #63c187;
-  --up: #e08a6a;
+  --down: #7ebc90;
+  --up: #d28974;
 
   --protein: #5a8ce6;
   --carbs: #c0871f;
   --fat: #be6480;
 
-  --focus: #12ad94;
+  --focus: #59a396;
   --lift: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
   --lift-sm: 0 1px 2px rgb(0 0 0 / 0.3);
 
@@ -114,9 +121,9 @@ body {
      fill, so this gives the panels something to sit on without adding colour
      anyone would notice as colour. */
   background-image:
-    radial-gradient(58% 42% at 8% 4%, rgb(0 144 127 / 0.13) 0%, transparent 62%),
-    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.09) 0%, transparent 58%),
-    radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.09) 0%, transparent 60%);
+    radial-gradient(58% 42% at 8% 4%, rgb(46 119 107 / 0.13) 0%, transparent 62%),
+    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.07) 0%, transparent 58%),
+    radial-gradient(64% 44% at 50% 102%, rgb(46 119 107 / 0.09) 0%, transparent 60%);
   background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-manrope), system-ui, sans-serif;
@@ -282,9 +289,9 @@ body {
   inset: -36px;
   background-color: var(--ground);
   background-image:
-    radial-gradient(58% 42% at 8% 4%, rgb(0 144 127 / 0.13) 0%, transparent 62%),
-    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.09) 0%, transparent 58%),
-    radial-gradient(64% 44% at 50% 102%, rgb(0 144 127 / 0.09) 0%, transparent 60%);
+    radial-gradient(58% 42% at 8% 4%, rgb(46 119 107 / 0.13) 0%, transparent 62%),
+    radial-gradient(52% 40% at 96% 22%, rgb(154 59 160 / 0.07) 0%, transparent 58%),
+    radial-gradient(64% 44% at 50% 102%, rgb(46 119 107 / 0.09) 0%, transparent 60%);
   background-attachment: fixed;
   filter: url(#liquid-warp);
   opacity: 0.92;

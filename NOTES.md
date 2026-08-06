@@ -134,10 +134,17 @@ Each of these cost something to learn. Changing one means re-learning it.
 day in the user's timezone; a UTC instant makes entries jump days across DST and
 travel.
 
-**The timezone is per account, not per server.** Captured from the browser at
-sign-in and refreshed on every sign-in, so the day boundary follows a person who
-travels. `APP_TIMEZONE` survives only as a fallback — it was wrong the moment a
-second person joined from another zone.
+**The timezone is per account, not per server.** `APP_TIMEZONE` survives only
+as a fallback — it was wrong the moment a second person joined from another
+zone.
+
+**It is synced on every page load, not at sign-in.** Sign-in-only sounded
+sufficient and was not: sessions last 90 days, so an account created before the
+column existed sat on its `America/New_York` default indefinitely, and a person
+who moves does not sign in again to tell us. That is not cosmetic — it files
+weigh-ins under the wrong day and fires the morning reminder at the wrong hour.
+`TimezoneSync` compares the browser's zone to the stored one on load and writes
+only when they differ.
 
 **Weights are stored in pounds, always.** `units` only decides rendering. That
 is why the lb/kg switch cannot leave the chart and the figures disagreeing:

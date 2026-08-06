@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { Nav } from "@/components/nav";
 import { NotificationBell } from "@/components/notification-bell";
 import { PushProvider } from "@/lib/use-push";
+import { TimezoneSync } from "@/components/timezone-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,8 @@ export default async function AppLayout({
 
   return (
     <PushProvider>
+      <TimezoneSync current={user.timezone} />
+
       <header className="sticky top-0 z-20 glass !rounded-none !shadow-none md:bg-transparent md:backdrop-blur-none">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-5 py-4 md:px-6">
           <span className="font-cond text-lg font-bold tracking-tight">

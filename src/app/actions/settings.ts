@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashPin, requireUser, verifyPin } from "@/lib/auth";
 import { toLbs } from "@/lib/units";
+import { isValidTimezone } from "@/lib/dates";
 
 export type SettingsResult = { ok: boolean; error?: string; message?: string };
 
@@ -124,4 +125,24 @@ export async function setUnitsAction(units: "lb" | "kg"): Promise<void> {
   revalidatePath("/calendar");
   revalidatePath("/friends");
   revalidatePath("/settings");
+}
+
+/**
+ * Keep the account's timezone matching the browser it is being used from.
+ *
+ * It used to be captured only at sign-in, which sounded sufficient and was
+ * not: sessions last 90 days, so an account created before this field existed
+ * kept the column default indefinitely, and someone who moves does not sign in
+ * again to tell us. A wrong zone here is not cosmetic — it files weigh-ins
+ * under the wrong day and fires the morning reminder at the wrong hour.
+ *
+ * Called on load and a no-op unless the two actually differ.
+ */
+export async function syncTimezoneAction(timezone: string): Promise<void> {
+  const me = await requireUser();
+
+  if (!isValidTimezone(timezone) || timezone === me.timezone) return;
+
+  await prisma.user.update({ where: { id: me.id }, data: { timezone } });
+  revalidatePath("/", "layout");
 }

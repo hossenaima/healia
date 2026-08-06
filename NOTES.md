@@ -1,326 +1,583 @@
-# Helia — build notes
+# Helia — engineering context
 
-Running record of what was built, what was decided, and why. Kept in the repo
-so the reasoning survives the conversation it came from.
+**This is the handoff document.** It is the accumulated reasoning behind the
+code: what was decided, what was tried and abandoned, and which mistakes have
+already been made so they need not be made again. Read it before changing
+anything non-trivial. `README.md` is for someone *using* Helia; this is for
+someone *working on* it.
+
+It is a living document. When you learn something here that the next session
+would otherwise rediscover the hard way, add it — see
+[Keeping this document alive](#keeping-this-document-alive) at the end.
+
+---
+
+## Contents
+
+- [What Helia is](#what-helia-is)
+- [Who it is for, and how they work](#who-it-is-for-and-how-they-work)
+- [Stack](#stack)
+- [Where things live](#where-things-live)
+- [Data model](#data-model)
+- [Load-bearing decisions](#load-bearing-decisions)
+- [Working on this database safely](#working-on-this-database-safely)
+- [Gotchas](#gotchas)
+- [Design system](#design-system)
+- [Motion](#motion)
+- [Verifying work](#verifying-work)
+- [Third-party research already done](#third-party-research-already-done)
+- [Tried and rejected](#tried-and-rejected)
+- [Open items](#open-items)
+- [Decisions waiting on the owner](#decisions-waiting-on-the-owner)
+- [Keeping this document alive](#keeping-this-document-alive)
 
 ---
 
 ## What Helia is
 
-A personal health log for a small number of people. Two daily habits: a
-morning weigh-in and meal logging.
+A personal health log for a handful of people. Two daily habits: a morning
+weigh-in and meal logging, plus a light social layer for encouragement.
 
-Live at `git@github.com:hossenaima/helia.git`.
+- Repo: `git@github.com:hossenaima/helia.git`
+- Live: <https://helia-plum.vercel.app>
+- Five tabs: **Weight** (`/`), **Calendar**, **Meals**, **Friends**, **Settings**
+
+The app is used mostly on an iPhone, first thing in the morning. Optimise for
+that: fast, quiet, few taps, works one-handed.
+
+## Who it is for, and how they work
+
+Built by and for its owner, with a small number of friends using it. Preferences
+observed over the course of building it — these are not guesses, they are things
+that were said or that were changed after feedback:
+
+- **Minimal, and proven before extended.** "Keep the features minimal and test
+  as I go." A feature that is not yet earning its place gets removed, not kept
+  behind a flag.
+- **Quiet over loud.** Three separate visual directions were rejected for being
+  too much: a pastel-per-tile palette ("why are we using such weird colors"), a
+  heavy display weight ("looks cartoonish"), and a saturated teal ("more muted
+  and less saturated"). When in doubt, subtract.
+- **Do not make the user do arithmetic the app can do.** The manual portion and
+  broth-left toggles were removed with exactly this reasoning: "the AI can
+  figure it out based on the description."
+- **Ship and look at it.** Work is reviewed in the browser on a phone-sized
+  viewport, not in the diff. Screenshots land better than descriptions.
 
 ## Stack
 
-| Piece | Choice | Why |
+| Piece | Choice | Notes |
 | --- | --- | --- |
-| Framework | Next.js 16 (App Router, Turbopack) | One deployable unit; server actions avoid a separate API layer |
-| Database | Supabase Postgres via Prisma 7 | Stateless app → deploys anywhere including Vercel |
-| Auth | Single PIN per account, signed cookie | No accounts service for an app with two users |
-| AI | Google Gemini (`@google/genai`) | Estimates a meal's calories and macros from plain text; sits behind one interface |
-| Charts | Recharts | |
-| Type | Manrope | Geometric and even-width; Nunito read as cartoonish once heavy, which is where the big figures live. Capped at weight 700 |
-| Auth screen visuals | ShaderGradient (three/r3f) | Dynamically imported so the daily pages never load it |
+| Framework | Next.js 16, App Router, Turbopack | `proxy.ts` replaces `middleware.ts`; `cookies()`/`params` are async |
+| Runtime | React 19 | Server Components by default; `<ViewTransition>` available |
+| Database | Supabase Postgres via Prisma 7 | Driver adapters (`@prisma/adapter-pg`), `prisma.config.ts` |
+| Generated client | `src/generated/prisma` | **TypeScript, not JS** — cannot be `import`ed from a plain `.mjs` script |
+| Auth | One PIN per account, scrypt, HMAC-signed cookie | No accounts service for an app this size |
+| AI | Google Gemini (`@google/genai`, `gemini-2.5-flash`) | Meal calorie/macro estimation, behind one interface |
+| Charts | Recharts | One `ComposedChart`; see [Verifying work](#verifying-work) before replacing it |
+| Styling | Tailwind v4, `@theme inline` | Custom properties, **not** the shadcn `hsl(var(--x))` convention |
+| Type | Manrope | Capped at 700; Nunito read as cartoonish once heavy |
+| Auth screen | ShaderGradient (three/r3f) | Dynamically imported, `ssr: false` — daily pages never load it |
+| Push | `web-push` + VAPID + `public/sw.js` | |
+| Hosting | Vercel **Hobby**, deployed by CLI | Not Git-connected: `git push` does **not** deploy |
 
-## Decisions worth remembering
+### Connection strings
 
-**Days are `"YYYY-MM-DD"` strings, not timestamps.** A morning weigh-in belongs
-to a calendar day in the user's timezone. Storing it as a UTC instant makes
-entries jump days across DST and travel.
+- `DATABASE_URL` — transaction pooler, port **6543**, `?pgbouncer=true`. Runtime.
+- `DIRECT_URL` — session pooler, port **5432**. Migrations only; the transaction
+  pooler cannot run DDL.
+- The direct endpoint (`db.<ref>.supabase.co`) is **IPv6-only** on the free tier
+  and will fail with `getaddrinfo ENOTFOUND`. Use the pooler hostnames.
+- A password containing `@` must be percent-encoded as `%40`.
 
-**The zone is per account, not per server.** It is captured from the browser at
-sign-in and refreshed on every sign-in, so the day boundary follows a person
-when they travel. A single `APP_TIMEZONE` was wrong the moment a second person
-joined from anywhere else; it survives only as a fallback.
+## Where things live
 
-**Weights are always stored in pounds.** The `units` setting only changes
-display and how typed input is read.
+```
+src/app/(app)/          everything behind the PIN
+  layout.tsx            header + <Nav>; owns auth redirect and the tab badge count
+  template.tsx          <ViewTransition> crossfade between tabs
+  loading.tsx           skeleton — also what makes these routes prefetchable
+  page.tsx              Weight
+  calendar|meals|friends|settings/
+src/app/actions/        server actions, one module per area
+src/app/api/cron/       CRON_SECRET-guarded; exempt in proxy.ts
+src/lib/                pure logic — dates, units, nutrition, calendar, friends
+src/lib/ai/             estimator + the shared Gemini JSON call
+src/lib/session.ts      crypto-only helpers, safe to import from proxy.ts
+src/proxy.ts            optimistic auth gate + static-asset exemptions
+prisma/migrations/      incremental, never reset — production data lives here
+scripts/reset-pin.mjs   the only PIN recovery path
+```
 
-**The chart's y-axis is scaled to the weights, never to the goal.** Forcing a
-distant goal into the domain squashed the trace into the top third and hid the
-day-to-day movement that is the reason to look. The goal line draws only when
-it can share the frame; otherwise it is stated as text.
+## Data model
+
+Days are `"YYYY-MM-DD"` strings, never timestamps. Weights are always stored in
+**pounds**. Every row hangs off a `User`, and every query filters on `userId`.
+
+- **User** — name/handle, `pinHash`/`pinSalt`, goal and target figures, `units`,
+  `timezone`, `notifyWeighIn`/`notifyFriends`/`reminderHour`, `lastRemindedOn`
+- **WeightEntry** — one per `(userId, date)`; re-submitting corrects it
+- **Meal** → **MealItem** — items carry `basis` (the estimator's working),
+  `source`, and `precision` (`exact` | `estimated`)
+- **DayLog** — per-day `activeBurnKcal`
+- **Friendship** — one row with a `status`, not two mirrored rows
+- **Encouragement** — `readAt` drives the 12-hour expiry
+- **PushSubscription** — unique by `endpoint`
+
+## Load-bearing decisions
+
+Each of these cost something to learn. Changing one means re-learning it.
+
+### Time and units
+
+**Days are strings, not timestamps.** A morning weigh-in belongs to a calendar
+day in the user's timezone; a UTC instant makes entries jump days across DST and
+travel.
+
+**The timezone is per account, not per server.** Captured from the browser at
+sign-in and refreshed on every sign-in, so the day boundary follows a person who
+travels. `APP_TIMEZONE` survives only as a fallback — it was wrong the moment a
+second person joined from another zone.
+
+**Weights are stored in pounds, always.** `units` only decides rendering. That
+is why the lb/kg switch cannot leave the chart and the figures disagreeing:
+there is one value and one conversion.
+
+### The chart
+
+**The y-axis scales to the weights, never to the goal.** Forcing a distant goal
+into the domain squashed the trace into the top third and hid the day-to-day
+movement that is the reason to look. The goal line draws only when it can share
+the frame; otherwise it is stated as text.
 
 **The 7-day mean walks calendar days, not logged ones.** A gap in logging must
 not compress the window and exaggerate a swing.
 
-**Portion share and broth-left are applied at read time**, not baked into the
-stored estimate, so correcting a share later needs no re-estimate. Sodium is cut
-harder than calories on broth-left, because that is where it lives.
+**Axis width is derived from the widest label.** A fixed `46px` was fine for
+`180` and silently cropped the leading digit off `180.4` once narrow ranges
+started getting a decimal.
+
+### Meals
 
 **Targets are entered by hand, never derived.** Mifflin-St Jeor can be off by
 hundreds of calories for an individual, and a wrong target would quietly skew
-the budget, the progress bars, and every suggestion. Blank targets hide those
-features rather than guessing.
-
-**Apple Health parsing happens in the browser.** The export zip is ~10MB but
-`export.xml` inflates past 200MB — far beyond a serverless request body. Only
-the extracted readings cross the network; the raw health data never leaves the
-device.
-
-**Glass is a lens, not a frost.** A blur alone reads as frosted plastic. The
-refraction comes from an oversized `::after` carrying a copy of the page wash,
-warped by an SVG `feTurbulence` + `feDisplacementMap`, clipped by the panel so
-the outline stays crisp. Both the body wash and the copy are
-`background-attachment: fixed`, which is what makes the copy line up with the
-real backdrop — the trick does not survive removing that.
-
-**`backdrop-filter: url(#filter)` does not work in Chrome.** SVG filters are
-only honoured by `filter`, not `backdrop-filter`; the whole declaration is
-dropped and computes to `none`. That is why the first attempt looked flat.
-
-**Glass needs something behind it.** On a flat near-white page there is nothing
-to refract, so the wash on `body` is load-bearing, not decoration.
-
-**Colour is reserved for data.** An earlier pass gave each tile its own pastel;
-it read as noise. The only saturated things on screen now are the trace, the
-goal and the macro split — things that mean something.
-
-**The calendar replaced a paste box.** Typing weigh-ins meant learning a date
-format; tapping a day means the date is the thing you touch, so there is no
-format to get wrong. Clearing the field and saving deletes the entry, which
-avoids a separate delete affordance.
-
-**A streak forgives today until the day is over.** Counting strictly from today
-would show a broken streak every morning before you step on the scale.
+the budget and every progress bar. Blank targets hide those features rather than
+guessing.
 
 **Itemise what the person can change, not what the dish is called.** If a
 description says what went into something, each component gets its own line —
 someone who used less granola needs a granola line to edit. A named restaurant
-dish or a packaged bar stays whole, because splitting a Big Mac into bun, patty
-and sauce is noise nobody can act on. The model collapses to the dish name
-unless told this explicitly.
+dish or a packaged bar stays whole; splitting a Big Mac into bun, patty and
+sauce is noise nobody can act on. **The model collapses to the dish name unless
+told this explicitly.**
 
-**An estimate you cannot argue with is just a number you have to trust.** Each
-item carries the estimator's working — the portion it assumed, what it counted —
-and every figure is editable. Correcting one scales its macros by the same
-ratio, so the split stays honest without retyping four numbers, and flips the
-item to `exact`, because once a person has adjusted it, it is their number.
+**An estimate you cannot argue with is just a number you have to trust.** Every
+item carries the estimator's working and is editable. Correcting one scales its
+macros by the same ratio and flips it to `exact` — once a person has adjusted
+it, it is their number.
 
-**Accounts are isolated at the query level.** Every read filters on `userId`
-and every delete is a scoped `deleteMany`, so a forged POST cannot reach another
+**Apple Health parsing happens in the browser.** The zip is ~10MB but
+`export.xml` inflates past 200MB, far beyond a serverless request body. Only the
+extracted readings cross the network.
+
+### Friends and notifications
+
+**A friendship is one row with a `status`.** Both requester and addressee
+indexes exist because both directions get queried.
+
+**`friendSummaries()` reads weigh-ins and streaks only.** No query on the
+friends path touches `Meal`. That is the boundary the feature promises in its
+own copy — keep it that way.
+
+**`requestFriendAction` returns the same message whether or not the name
+exists**, so the form cannot be used to discover who has an account.
+
+**A note is deleted 12 hours after it is *read*, not after it is sent.** An
+unread note waits indefinitely, so nothing can vanish before it has been seen.
+The page filters expired ones so the moment is exact; the cron deletes them so
+text the reader was told had gone is not still in the table. The card shows a
+live "fades in 11h" — a message that silently disappears reads as a bug.
+
+**Notification kinds are separate from the hour.** `notifyWeighIn` decides
+*whether*, `reminderHour` decides *when*. Collapsing them into a nullable hour
+meant turning reminders off also forgot the chosen time.
+
+**The first device to subscribe switches both kinds on.** Granting permission is
+the yes; a settings panel where everything is still off asks it twice. Only the
+first device, so a second cannot undo choices already made.
+
+**Reminders need an hourly sweep, not a daily one.** "8am" is a different
+instant for every account, so one run a day can only ever serve one timezone.
+**Vercel Hobby caps crons at one run per day and rejects the deploy outright for
+anything faster** — so the hourly trigger is `.github/workflows/reminders.yml`
+and the `vercel.json` cron is a daily backstop.
+
+**Every scheduler that reaches that route is at-least-once, and two can
+overlap**, so `User.lastRemindedOn` makes it idempotent per day. Calling it
+repeatedly is safe by design; that is what lets a free scheduler drive it.
+
+**`notifyFriendActivity` never throws into its caller.** A push service being
+slow is not a reason for the friend request itself to fail.
+
+### Security
+
+**Accounts are isolated at the query level.** Every read filters on `userId`,
+every delete is a scoped `deleteMany`. A forged POST cannot reach another
 account's data.
 
-## Things that were tried and rejected
+**`/api/cron/*` is exempt in `proxy.ts`** — it authenticates with `CRON_SECRET`,
+and a redirect to `/login` would turn a failed cron into a silent 307.
+`/sw.js`, `/manifest.webmanifest`, `/icon-*`, `/apple-touch-icon*` are exempt
+too: the OS fetches them during install, outside any session.
 
-- **liquid-glass-js** — builds DOM imperatively (`new Button()`) and samples the
-  page with `html2canvas`. Cannot wrap React children, and rasterising a
-  figure-dense page on a phone would be slow. The glass look is CSS
-  `backdrop-filter` instead.
-- **liquid-logo** — a demo app, not a package.
-- **SQLite on a volume** — worked, but tied hosting to a persistent disk.
-  Replaced by Supabase once a host was being chosen anyway.
-- **Deriving the calorie target from height/weight** — see above.
-- **Manual portion / broth-left / read-off-a-label toggles on meals** — they
-  asked the user to do arithmetic the estimator can infer from their own
-  description, so they were removed along with their columns.
-- **The typed backfill box** — replaced by the calendar.
-- **A "what can I eat?" suggestion engine** — built, then removed. It was the
-  least proven feature and the most machinery, and the point of this app is the
-  daily logging habit. Kept out to stay minimal; the commit history has it if
-  it is ever wanted back.
+**No PIN recovery by design.** `scripts/reset-pin.mjs` is the escape hatch. It
+re-hashes with the same scrypt parameters as `src/lib/auth.ts`; the two must
+stay in step or a reset PIN will not verify.
 
-## Gotchas hit during the build
-
-- `"use server"` files may export only async functions. Constants and parsers
-  have to live in a separate module.
-- Client components cannot import anything that pulls in `server-only`. Shared
-  vocabulary has to live in a module the AI code does not own.
-- **A utility class must never set `display`.** `.eyebrow` set `display: block`
-  to stop a label colliding with its input; because it is defined after the
-  Tailwind import it silently beat `flex` everywhere the two were combined,
-  which is what knocked the nav labels off centre. Callers that need block say
-  so themselves.
-- **`viewport-fit=cover` is required for `env(safe-area-inset-*)` to be
-  non-zero on iPhone.** Without it the bottom bar sits under the home
-  indicator and the padding intended to clear it does nothing.
-- A submit button's `name`/`value` is serialised natively by the browser.
-  Setting React state in `onClick` to record which button was pressed **races
-  the submission** and can send the previous value.
-- **Gemini's structured output has a complexity budget.** A schema that is too
-  rich is rejected outright with "the specified schema produces a constraint
-  that has too many states for serving" — no partial result, no clue which part
-  is at fault. A `maxItems` on a nested array is the worst offender and each
-  nullable field doubles the state count again. Keep response schemas flat and
-  fully required; cap array length in code instead.
-- Prisma 7 uses driver adapters and `prisma.config.ts`; migrations read
-  `DIRECT_URL` because the transaction pooler cannot run DDL.
-- Supabase's direct endpoint (`db.<ref>.supabase.co`) is IPv6-only on the free
-  tier. Use the pooler hostnames.
-- **iPhone only delivers web push to a Home Screen app**, never to a Safari tab
-  — `PushManager` is simply absent there, with no way to feature-detect the
-  reason. Settings checks for iOS plus non-standalone display and says to add
-  Helia to the Home Screen, rather than showing a button that cannot work.
-- Chrome refuses the Push API in incognito, so a Puppeteer
-  `createBrowserContext()` cannot test subscribing — use the default context
-  with a `userDataDir`.
-- `pushManager.subscribe()` rejects for reasons the page cannot anticipate.
-  It is wrapped, because an unhandled rejection there took the whole settings
-  panel down with no message.
-
-## Environment
-
-See `.env.example`. `GEMINI_API_KEY` turns on meal estimation; without
-it the app still works and the button explains why it is disabled.
-
-## Icons
-
-- `apple-touch-icon.png` is 180×180, **opaque and un-rounded**: iOS composites
-  a transparent touch icon onto black and applies its own mask, so supplying
-  pre-rounded corners double-rounds it.
-- The mark stays inside 23–77% of the canvas so it also survives Android's
-  maskable safe-zone crop, and uses the literal `--ground` and `--trace`
-  tokens — the icon and the chart line are the same green.
-- An S-curve was tried first. At home-screen size two inflections stop reading
-  as a line and start reading as a squiggle; one descent survives the scale.
-
-## Look
-
-- The trace teal is deliberately under the `dataviz` validator's categorical
-  chroma floor (0.075 against a floor of 0.1). That floor exists to keep many
-  series apart by hue; there is one series here, and the goal line beside it is
-  dashed and directly labelled. Muting it also took contrast from 3.97:1 to
-  5.29:1. `--goal` was left saturated on purpose — it is what holds ΔE 8.5
-  separation from the trace for a deutan reader.
-- The neutral ramp is neutral. It used to carry a green cast at every step,
-  which put a second green on screen arguing with the trace and read as olive
-  rather than quiet. Colour now means data; everything else is graphite.
-- Buttons are `.btn` plus `.btn-primary` / `.btn-quiet` / `.btn-soft` in
-  `globals.css`, and small pills are `.chip`. Ten inline copies of the same
-  string used to spell this out, every one uppercase and tracked wide — set
-  against soft cards that read as shouting, and it was the loudest thing on a
-  page whose whole point is calm.
-- `.eyebrow` is 600. Nearly every label, tab and section heading wears it, and
-  at 700 the interface shouted in unison. Bold is left for data and state.
-- A disabled `.btn-primary` recedes to the sunk surface rather than dimming to
-  40%: a full-width dark button at 40% is a grey slab, and a grey slab reads
-  as broken rather than as "nothing to submit yet".
-- The header row is baseline-aligned, and the Lock form is `display: contents`
-  so the button is the flex item. Wrapped in a form it was laid out as one and
-  sat two pixels below the account name.
-
-## Motion
-
-Deliberately no animation library. Motion is ~42kB gzipped on `motion/react`
-and anime.js ~13kB for `animate()` alone, and everything wanted here is either
-already paid for or is a CSS keyframe:
-
-- Tab crossfades are React's `<ViewTransition>` via `experimental.viewTransition`
-  and `(app)/template.tsx`. A template remounts per navigation where a layout
-  does not, which is what gives React two states to fade between.
-- The lit tab marker is one absolutely positioned element translated by index,
-  which is why the tabs are equal width at every size — nothing has to be
-  measured. Five peer tabs have no forward or back, so a directional slide
-  would be claiming a hierarchy that is not there.
-- Row entrances reuse the existing `settle` keyframe with a capped
-  `animationDelay`. That is what `stagger()` would have cost 17kB for.
-- The chart's trend line uses Recharts' own `isAnimationActive`. The daily area
-  stays static: two lines animating at once reads as a fidget.
-- **The `prefers-reduced-motion` block is narrower than it looks.** `*` does not
-  match `::view-transition-*` — those are top-layer pseudo-elements and are not
-  descendants of anything — so they are named explicitly. Any JS-driven
-  animation would need its own switch too; the CSS override cannot reach it.
-- If something ever genuinely needs interruptible springs or gesture-tracked
-  drag, `motion/react-mini`'s `useAnimate` is 3.2kB. Not `motion/react`.
-
-## Navigation
-
-- The header and tab bar live in `src/app/(app)/layout.tsx`, not in each page.
-  When they were part of every page, a tab switch tore down the whole chrome
-  and rebuilt it, so nothing on screen moved until the server answered — which
-  is what "the tabs take a while" actually was.
-- `(app)/loading.tsx` is what makes these dynamic routes prefetchable at all;
-  without a loading file Next skips prefetching them entirely.
-- The nav lights the pressed tab optimistically, because `usePathname` only
-  changes once the route is ready. `useLinkStatus` adds a creeping hairline
-  for the case where the prefetch has not landed.
-- `currentUser()` is wrapped in React `cache()`: the layout and the page both
-  ask, and without it that is two identical queries per navigation.
-
-## Friends and notifications
-
-- A friendship is one row with a `status`, not two mirrored rows. Both the
-  requester and addressee indexes exist because both directions get queried.
-- `friendSummaries()` reads weigh-ins and streaks only. No query on the friends
-  path touches `Meal`, which is the boundary the feature promises in its own
-  copy — keep it that way.
-- `requestFriendAction` returns the same message whether or not the name
-  exists, so the form cannot be used to discover who has an account.
-- Notification kinds are per account (`notifyWeighIn`, `notifyFriends`), and
-  `reminderHour` is only *when*, never *whether* — collapsing the two into a
-  nullable hour meant turning reminders off also forgot the chosen time.
-- The first device to subscribe switches both kinds on. Granting permission is
-  the yes; a settings panel where everything is still off asks it twice. Only
-  the first, so a second device cannot undo choices already made.
-- Reminders need an **hourly** sweep, not a daily one: "8am" is a different
-  instant for every account, so a once-a-day schedule can only ever serve one
-  timezone. Vercel's Hobby plan caps crons at one run per day and rejects the
-  deploy outright for anything faster, so the hourly trigger is a GitHub
-  Actions workflow and the Vercel cron is only a daily backstop.
-- Every scheduler that can reach that route is at-least-once, and two of them
-  can overlap, so `User.lastRemindedOn` makes the route idempotent per day.
-  Calling it repeatedly is safe by design — that is what lets a free scheduler
-  drive it.
-- `/api/cron/*` is exempt in `proxy.ts` — it authenticates with `CRON_SECRET`,
-  and a redirect to `/login` would turn a failed cron into a silent 307.
-- `/sw.js`, `/manifest.webmanifest`, and `/icon-*.png` are exempt too: the OS
-  fetches them during install, outside any session.
-
-## Units
-
-- Weights are stored in pounds, always. `units` only decides how they are
-  rendered, which is why the switch on the Weight tab cannot leave the chart
-  and the figures disagreeing — there is one value and one conversion.
-- Client inputs that mirror a server-rendered number have to follow it when it
-  changes. `WeighInForm` used to seed state from a prop and keep it, so
-  switching to kg left a pounds figure under a "kg" label. It now clears
-  whenever the server sends a different value — which doubles as the receipt
-  for a save — and shows the stored reading in the placeholder instead.
-- The chart's y-axis width is derived from the widest label it will draw. A
-  fixed 46px was fine for "180" and quietly cropped the leading digit off
-  "180.4" once narrow ranges started getting a decimal.
+---
 
 ## Working on this database safely
 
-- **Test mutations must be scoped to test accounts.** An `UPDATE
-  "Encouragement" SET "readAt" = now() - interval '13 hours'` written to age
-  one test note aged every row in the table, and the next cron pass deleted
-  four real messages between the two live accounts. There is no local
-  database and no point-in-time recovery on the Supabase free tier: `DATABASE_URL`
-  is production. Every write from a script gets a `where` naming the test
-  handle or id.
-- `createdAt`/`readAt` are `timestamp without time zone` holding UTC instants,
-  which Prisma writes and reads as UTC. The raw `pg` client parses them as
-  *local* time, so a `SELECT` through a script renders them shifted by the
-  machine's offset. Use `to_char(col, 'YYYY-MM-DD HH24:MI:SS')` when the exact
-  stored value matters, and never round-trip a displayed value back in.
+> **`DATABASE_URL` is production.** There is no local database and no
+> point-in-time recovery on the Supabase free tier.
 
-## Operational notes
+**Scope every scripted write to a test account.** An `UPDATE "Encouragement"
+SET "readAt" = now() - interval '13 hours'`, written to age one test note, aged
+every row in the table — and the next cron pass deleted four real messages
+between the two live accounts. Three were recovered only because a `SELECT` had
+been run moments earlier; the fourth was lost. Every write from a script gets a
+`where` naming the test handle or id.
 
-- **No PIN recovery by design.** `scripts/reset-pin.mjs` is the escape hatch;
-  it re-hashes with the same scrypt parameters as `src/lib/auth.ts`, which the
-  two must keep in step or a reset PIN will not verify.
+**Clean up test accounts.** Signup is open, so test accounts land in the same
+table as real ones. Delete by handle when done; cascades handle the rest.
+
+**Naive timestamps are read differently by Prisma and by `pg`.**
+`createdAt`/`readAt` are `timestamp without time zone` holding UTC instants.
+Prisma writes and reads them as UTC; the raw `pg` client parses them as *local*
+time, so a `SELECT` through a script renders them shifted by the machine's
+offset. Use `to_char(col, 'YYYY-MM-DD HH24:MI:SS')` when the exact stored value
+matters, and **never round-trip a displayed value back in** — that is how a
+restore went in seven hours late.
+
+**Migrations are incremental and never reset.** Real data lives in this
+database. Write a new migration; do not `migrate reset`.
+
+**Regenerate and restart after a schema change.** `npx prisma generate` writes
+to `src/generated/prisma`, and a running dev server keeps the old client in
+memory. Turbopack HMR has also been seen serving a stale route module after an
+edit — if a change appears not to have taken, restart before debugging further.
+
+---
+
+## Gotchas
+
+Grouped by where they bite.
+
+### Next.js / React
+
+- **`"use server"` files may export only async functions.** Constants and
+  parsers must live in a separate module.
+- **Client components cannot import anything that pulls in `server-only`.**
+  Shared vocabulary lives in a module the AI code does not own.
+- **`proxy.ts` must not import Prisma.** Crypto-only helpers were split into
+  `src/lib/session.ts` for this.
+- **Pages will prerender static and bake in a redirect.** Anything reading auth
+  needs `export const dynamic = "force-dynamic"`.
+- **A dynamic route with no `loading.tsx` is not prefetched at all.** This is
+  most of why tab switching felt slow.
+- **`usePathname` only changes once the route is ready**, so an active-tab
+  indicator driven by it is always a beat behind. Use an optimistic value.
+- **`currentUser()` is wrapped in React `cache()`** — the layout and the page
+  both ask, and without it that is two identical queries per navigation.
+- **A submit button's `name`/`value` is serialised natively.** Setting React
+  state in `onClick` to record which button was pressed *races the submission*
+  and can send the previous value.
+- **A client input mirroring a server-rendered number must follow it.**
+  `WeighInForm` seeded state from a prop and kept it, so switching to kg left a
+  pounds figure under a "kg" label.
+
+### CSS
+
+- **A utility class must never set `display`.** `.eyebrow` set `display: block`;
+  because it is defined after the Tailwind import it silently beat `flex`
+  everywhere the two were combined, which knocked the nav labels off centre.
+- **`viewport-fit=cover` is required** for `env(safe-area-inset-*)` to be
+  non-zero on iPhone. Without it the bottom bar sits under the home indicator.
+- **`backdrop-filter: url(#filter)` does not work in Chrome.** SVG filters are
+  honoured by `filter` only; the whole declaration computes to `none`.
+- **`*` does not match `::view-transition-*`.** They are top-layer
+  pseudo-elements, descendants of nothing, so the global reduced-motion override
+  does not reach them. The same hole opens under any JS-driven animation.
+- **A `<form>` wrapper becomes the flex item, not the button inside it.** Use
+  `display: contents` — this is why Lock sat two pixels below the account name.
+
+### Gemini
+
+- **Structured output has a complexity budget.** Too rich a schema is rejected
+  outright with *"the specified schema produces a constraint that has too many
+  states for serving"* — no partial result, no hint which part is at fault. A
+  `maxItems` on a nested array is the worst offender and each nullable field
+  doubles the state count again. **Keep response schemas flat and fully
+  required; cap array length in code.** This was the root cause of estimation
+  silently never working.
+- **Backticks inside a backtick-delimited prompt** break the template literal.
+  Use double quotes when naming a field in prompt text.
+
+### Push notifications
+
+- **iPhone only delivers web push to a Home Screen app**, never a Safari tab.
+  `PushManager` is simply absent there with no way to feature-detect *why*, so
+  Settings checks for iOS plus non-standalone display and says to install.
+- **Chrome refuses the Push API in incognito**, so a Puppeteer
+  `createBrowserContext()` cannot test subscribing. Use the default context with
+  a `userDataDir`.
+- **`pushManager.subscribe()` rejects for reasons the page cannot anticipate.**
+  Wrap it — an unhandled rejection took the whole settings panel down with no
+  message.
+
+### Dependencies
+
+- **`@shadergradient/react` declares no dependencies or peers** but imports
+  `three`, `@react-three/fiber`, `camera-controls` and `three-stdlib` at
+  runtime. Grepping `src/` for imports will wrongly report those as dead.
+- **`PrismaBetterSqlite3`**, not `PrismaBetterSQLite3` — relevant only if SQLite
+  ever comes back.
+
+---
+
+## Design system
+
+Defined in `src/app/globals.css`. Light is the designed-for case; dark exists
+behind `[data-theme="dark"]` and is opt-in, so an OS-dark phone still gets the
+intended light look.
+
+**There are no `dark:` classes anywhere and no `@custom-variant dark`.** In
+Tailwind v4 a bare `dark:` compiles to `prefers-color-scheme`, so any pasted-in
+component carrying `dark:` classes will flip dark on someone's phone while the
+rest of the app stays light.
+
+### Colour
+
+| Token | Light | Role |
+| --- | --- | --- |
+| `--ground` | `#f7f9f9` | page |
+| `--surface` / `--surface-sunk` | `#ffffff` / `#eef1f2` | cards, wells |
+| `--ink` / `--ink-muted` / `--ink-faint` | `#181d20` / `#5a656b` / `#98a2a7` | text |
+| `--trace` | `#2e776b` | the weight line — the one accent |
+| `--goal` | `#9a3ba0` | goal horizon, dashed and labelled |
+| `--down` / `--up` | `#3a6d4a` / `#97503c` | toward / away from goal |
+
+**Colour is reserved for data.** An earlier pass gave each tile its own pastel
+and read as noise. The only saturated things on screen mean something.
+
+**The neutrals are neutral.** They used to carry a green cast at every step,
+which put a second green on screen arguing with the trace and read as olive.
+
+**The trace is deliberately under the `dataviz` validator's categorical chroma
+floor** (0.075 against a floor of 0.1). That floor keeps many series apart by
+hue; there is one series here and the goal line is dashed and directly labelled.
+Muting it also took contrast from 3.97:1 to 5.29:1. `--goal` stays saturated on
+purpose — it is what holds ΔE 8.5 separation from the trace for a deutan reader.
+
+### Type and controls
+
+- **`.eyebrow` is 600, not 700.** Nearly every label, tab and section heading
+  wears it; at 700 the interface shouted in unison. Bold is left for data.
+- **Buttons are `.btn` + `.btn-primary` / `.btn-quiet` / `.btn-soft`; small
+  pills are `.chip`.** Ten inline copies of the same string used to spell this
+  out, every one uppercase and tracked wide — against soft cards that reads as
+  shouting. Sentence case, defined once.
+- **A disabled `.btn-primary` recedes to the sunk surface** rather than dimming
+  to 40%: a full-width dark button at 40% is a grey slab, and a grey slab reads
+  as broken rather than "nothing to submit yet".
+
+### Glass
+
+**Glass is a lens, not a frost.** A blur alone reads as frosted plastic. The
+refraction comes from an oversized `::after` carrying a copy of the page wash,
+warped by an SVG `feTurbulence` + `feDisplacementMap` and clipped by the panel.
+Both the body wash and the copy are `background-attachment: fixed`, which is
+what makes the copy line up with the real backdrop — **the trick does not
+survive removing that.** The wash on `body` is load-bearing: on a flat
+near-white page there is nothing to refract.
+
+### Icons
+
+- `apple-touch-icon.png` is 180×180, **opaque and un-rounded**. iOS composites
+  transparency onto black and applies its own mask, so pre-rounded corners
+  double-round.
+- The mark stays inside 23–77% of the canvas to survive Android's maskable crop,
+  and uses the literal `--ground` and `--trace` tokens.
+- An S-curve was tried first; at home-screen size two inflections read as a
+  squiggle. One descent survives the scale.
+
+---
+
+## Motion
+
+**Deliberately no animation library.** Motion is ~42kB gzipped on `motion/react`
+(`motion/react-mini` is 3.2kB); anime.js is ~13kB for `animate()` alone. A 40kB
+library in the `(app)` layout lands on every tab, on a phone, at 7am. Everything
+wanted here was already paid for:
+
+- **Tab crossfades** — React `<ViewTransition>` via `experimental.viewTransition`
+  and `(app)/template.tsx`. A template remounts per navigation where a layout
+  does not, which is what gives React two states to fade between.
+- **The lit tab marker** — one absolutely positioned element translated by
+  index, which is why tabs are equal width at every size: nothing has to be
+  measured. Five peer tabs have no forward or back, so a directional slide would
+  claim a hierarchy that is not there.
+- **Row entrances** — the existing `settle` keyframe with a capped
+  `animationDelay`. That is what `stagger()` would have cost 17kB for.
+- **The chart's trend line** — Recharts' own `isAnimationActive`. The daily area
+  stays static; two lines animating at once reads as a fidget.
+- **Press feedback** — `.btn:active { transform: scale(0.98) }`. With
+  `-webkit-tap-highlight-color` suppressed globally there was no acknowledgement
+  of a tap at all.
+
+If something genuinely needs interruptible springs or gesture-tracked drag —
+the two things CSS cannot do — reach for `motion/react-mini`'s `useAnimate`,
+not `motion/react`.
+
+---
+
+## Verifying work
+
+**Claims about this app are checked in a browser, not asserted.** The pattern
+that works:
+
+- `puppeteer-core` driving the system Chrome from the scratchpad directory
+  (`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`, `--no-sandbox
+  --enable-unsafe-swiftshader`), at a 390×844 viewport.
+- Test against `next start` on a spare port for realistic timing; `next dev` is
+  much slower and misleading for anything performance-related.
+- Two isolated browser contexts for anything involving two accounts.
+- Direct SQL through `pg` to confirm what actually landed in the database.
+- `node scripts/validate_palette.js` from the `dataviz` skill for any palette
+  change — the colour part is computable, so compute it.
+
+**Test-selector traps that have wasted time before:**
+
+- CSS `text-transform: uppercase` changes `innerText`, so `=== "kg"` fails where
+  `.toLowerCase()` succeeds.
+- `form button[type="submit"]` matches the header Lock form too. Scope it.
+- `::-p-text(Save)` also matches "Save meal".
+- `document.querySelector("svg")` finds the glass filter's `<svg>`, not the
+  chart. Scope to the chart's section.
+- Clicking immediately after a redirect can beat hydration; the click is
+  swallowed. Settle the page first.
+- A transition sampled after its duration looks like a jump. Sample inside it.
+
+---
+
+## Third-party research already done
+
+Researched in depth; **do not re-research without a reason.**
+
+| Source | Verdict |
+| --- | --- |
+| Motion (motion.dev), anime.js | Neither. See [Motion](#motion). |
+| kokonutui | **No.** 31 of 40 free components need Motion; hardcodes `text-zinc-900 dark:text-white` with no token layer, so adapting is a rewrite not a find-and-replace; its `dark:` classes would break this app's light-only intent. Its `liquid-glass-card` is cruder than what is here. |
+| bklit | Not the code — one chart pulls ~3,400 lines and 8 deps, on a pinned visx alpha. **Two free ideas:** its chart token vocabulary (`--chart-grid`, `--chart-label`, `--chart-line-primary`) and its projection-line concept ("at your current rate you reach goal around Nov 14"), drawable in Recharts as a second `<Line>`. |
+| Recharts | **Keep it.** Nothing evaluated beat it for one line chart. |
+| Mobbin | Hard 403 to any automated fetch. Needs a human logged in. |
+| Awwwards | Accessible but near-useless here — agency showreels judged partly on motion spectacle. |
+| OpenJarvis | Irrelevant. A local on-device AI agent framework, nothing to do with UI. |
+| Kombai | An AI design-to-code extension, not a component source. |
+
+**Useful patterns found in real health apps** (MacroFactor, WHOOP, Happy Scale,
+Duolingo, Apple Fitness), not yet implemented:
+
+- MacroFactor renders raw weight pale and the *smoothed trend* as the hero,
+  because a trend number does not flinch on a bad morning. Helia does the
+  opposite: the ring and "Since last" both show raw values while the 7-day mean
+  goes only to the chart.
+- Duolingo's streak freeze and 3-day repair window; its single bar across a
+  perfect week rather than seven decorated days.
+- Happy Scale's intermediate milestones, so the ring completes and resets
+  instead of barely moving for months.
+- Apple Fitness attaches a reply to a specific event and lets you hide your
+  progress from a given friend.
+
+---
+
+## Tried and rejected
+
+- **liquid-glass-js** — builds DOM imperatively and samples the page with
+  `html2canvas`. Cannot wrap React children; rasterising a figure-dense page on
+  a phone would be slow.
+- **liquid-logo** — a demo app, not a package.
+- **SQLite on a volume** — worked, but tied hosting to a persistent disk.
+- **Deriving the calorie target from height/weight** — see Load-bearing
+  decisions.
+- **Manual portion / broth-left / read-off-a-label toggles** — asked the user to
+  do arithmetic the estimator infers from their own description. Removed along
+  with their columns (`20260804010000_drop_manual_adjustments`).
+- **The typed backfill box** — replaced by the calendar. Typing weigh-ins meant
+  learning a date format; tapping a day means the date is the thing you touch.
+- **A "what can I eat?" suggestion engine** — built, then removed as the least
+  proven feature and the most machinery. In the commit history if wanted back.
+
+---
 
 ## Open items
 
-- Supabase project is in **us-west-1** while the user is US East — ~70ms of
-  avoidable latency on every request. Cheap to fix while the database is small.
-- Deployed at https://helia-plum.vercel.app (Vercel CLI, not Git-connected —
-  pushes do not auto-deploy yet).
-- Signup is still open; close it with `ALLOW_SIGNUP=false` once the second
-  person has an account.
-- The steps-driven calorie bar is deferred, not dropped.
-- The reminder workflow needs two GitHub repo secrets, `APP_URL` and
-  `CRON_SECRET`. Without them the hourly sweep fails silently and only the
-  daily Vercel backstop runs.
-- A note is deleted 12 hours after it is **read**, not after it is sent, so
-  nothing can vanish before it has been seen — an unread note waits
-  indefinitely. The friends page filters expired ones out so the moment is
-  exact, and the hourly cron deletes them so text the reader was told had gone
-  is not still sitting in the table. The card shows a live "fades in 11h",
-  because a message that silently disappears reads as a bug.
-- Friend requests and notes push as well as showing a count on the Friends tab.
-  `notifyFriendActivity` never throws into its caller: a push service being
-  slow is not a reason for the request itself to fail.
+**Needs the owner to act:**
+
+- **Signup is open and strangers have used it.** Accounts now include Matthew,
+  Spider Man and Saleh alongside the two intended users. Close it with
+  `ALLOW_SIGNUP=false`; existing accounts keep working.
+- **The reminder workflow needs two GitHub repo secrets**, `APP_URL` and
+  `CRON_SECRET`. Without them the hourly sweep fails and only the daily Vercel
+  backstop runs — so any hour other than 8am ET will not fire.
+- **Rotate the Gemini API key.** It was pasted in plaintext during the build.
+  (The Supabase password and region were explicitly left alone on request.)
+
+**Known and deliberate:**
+
+- Supabase is in **us-west-1** while the owner is US East — ~70ms of avoidable
+  latency per request. Cheap to fix while the database is small.
+- Vercel is **not Git-connected**; deploys are `npx vercel deploy --prod`.
+- The steps-driven dynamic calorie bar is **deferred, not dropped**.
+
+**Verified bugs, not yet fixed:**
+
+- The water-retention banner requires `priorTags.length > 0`, so a gain with no
+  logged meal gets no reassurance — likely most bad mornings.
+- A friend's weight *gain* renders in `--up` (rust) with an ↑ arrow on the one
+  screen built for encouragement.
+- The week strip fills logged days with `bg-trace`, spending the colour that
+  means *weight* on attendance instead.
+
+## Decisions waiting on the owner
+
+- **Liquid glass.** It was explicitly requested, and it is also the loudest
+  thing left in an app whose brief is "cleaner". Removing it would be a large
+  quieting and a net deletion of CSS. Owner's call.
+- **The 🔥 emoji** in the streak — the most saturated pixels in a monochrome
+  palette. Also explicitly requested.
+- **The sign-in shader backdrop.** Dropping it removes `three`,
+  `@react-three/fiber`, `camera-controls`, `three-stdlib` and
+  `@shadergradient/react` in one go.
+- **One lost message.** "Nice work today 👏", sent 5:39am ET Aug 6, direction
+  unknown. Will be restored once the owner says who sent it.
+
+---
+
+## Keeping this document alive
+
+Add to it when you learn something the next session would otherwise rediscover
+the hard way. Specifically:
+
+1. **A decision that cost something to reach** → *Load-bearing decisions*, with
+   the reason, not just the rule. A rule without its reason gets reverted.
+2. **A dead end** → *Tried and rejected*, so nobody spends the afternoon again.
+3. **A surprise from a library, browser or platform** → *Gotchas*.
+4. **A mistake with consequences** → wherever it will be read *before* the same
+   move is made. The database section exists because of a real incident.
+5. **Something the owner said they want or do not want** → *Who it is for*.
+
+Prune as well as add. A stale line is worse than a missing one — the portion and
+broth adjustments were described as current in this file for two days after
+their columns were dropped. When behaviour changes, fix the description in the
+same commit.

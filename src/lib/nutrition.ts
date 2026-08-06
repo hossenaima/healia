@@ -1,9 +1,10 @@
 /**
  * Everything the app knows about turning logged items into figures on screen.
  *
- * Adjustments (portion share, broth left behind) are applied here at read time
- * rather than written into the stored estimate, so correcting a share later
- * does not require re-estimating the food.
+ * A meal's totals are a plain sum of its items. There were once manual
+ * adjustments here — portion share, broth left behind — applied at read time;
+ * they asked the person to do arithmetic the estimator infers from their own
+ * description, and both the controls and their columns are gone.
  */
 
 export type Nutrition = {

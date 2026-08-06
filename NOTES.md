@@ -47,7 +47,9 @@ that: fast, quiet, few taps, works one-handed.
 
 ## Who it is for, and how they work
 
-Built by and for its owner, with a small number of friends using it. Preferences
+Built by its owner, with a handful of invited testers using it — currently
+Jerry plus Matthew, Saleh and Spider Man. Anyone with an account is meant to be
+there. Preferences
 observed over the course of building it — these are not guesses, they are things
 that were said or that were changed after feedback:
 
@@ -553,23 +555,23 @@ Duolingo, Apple Fitness), not yet implemented:
 
 **Needs the owner to act:**
 
-- **Signup is open and strangers have used it.** Accounts now include Matthew,
-  Spider Man and Saleh alongside the two intended users. Close it with
-  `ALLOW_SIGNUP=false`; existing accounts keep working.
-- **The hourly reminder sweep has never run.** The workflow is committed
-  locally but the commits were never pushed, so `.github/workflows/` does not
-  exist on GitHub, and the two repo secrets (`APP_URL`, `CRON_SECRET`) are
-  unset. Only the daily Vercel cron at `0 12 * * *` fires — which is exactly
-  8am in `America/New_York`, so Eastern accounts got their reminder and
-  everyone else got nothing. Push, then set the secrets.
 - **Rotate the Gemini API key.** It was pasted in plaintext during the build.
   (The Supabase password and region were explicitly left alone on request.)
 
 **Known and deliberate:**
 
+- **Signup is open on purpose.** Every account is invited — Matthew, Saleh and
+  Spider Man are testers, not strangers who wandered in. Do not "fix" this by
+  setting `ALLOW_SIGNUP=false` without asking; it is a choice, not an
+  oversight. The flag exists for when testing ends.
 - Supabase is in **us-west-1** while the owner is US East — ~70ms of avoidable
   latency per request. Cheap to fix while the database is small.
 - Vercel is **not Git-connected**; deploys are `npx vercel deploy --prod`.
+  Pushing to GitHub does not deploy — but it *is* what feeds the reminder
+  workflow, so the two now have to stay in step. The sweep first ran on
+  2026-08-06 after 15 commits were pushed and `APP_URL` / `CRON_SECRET` were
+  set; before that `.github/workflows/` did not exist on GitHub at all and the
+  only thing firing was the daily Vercel backstop.
 - The steps-driven dynamic calorie bar is **deferred, not dropped**.
 
 **Verified bugs, not yet fixed:**

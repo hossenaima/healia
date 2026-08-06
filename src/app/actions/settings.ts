@@ -105,3 +105,23 @@ export async function changePinAction(
 
   return { ok: true, message: "PIN updated." };
 }
+
+/**
+ * Switch the display unit on its own.
+ *
+ * Weights are always stored in pounds, so nothing is converted here — every
+ * figure on the page is rendered through `fromLbs`, and re-rendering with a
+ * different unit is the whole change. That is also why the chart and the
+ * numbers cannot disagree: there is one value and one conversion.
+ */
+export async function setUnitsAction(units: "lb" | "kg"): Promise<void> {
+  const me = await requireUser();
+  if (units !== "lb" && units !== "kg") return;
+
+  await prisma.user.update({ where: { id: me.id }, data: { units } });
+
+  revalidatePath("/");
+  revalidatePath("/calendar");
+  revalidatePath("/friends");
+  revalidatePath("/settings");
+}

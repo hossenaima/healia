@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { weighInStreak } from "@/lib/calendar";
-import { Shell } from "@/components/shell";
+import { PageTitle } from "@/components/page-title";
 import { WeightCalendar } from "@/components/weight-calendar";
 import { HealthImport } from "@/components/health-import";
 import { StreakTile } from "@/components/streak-tile";
@@ -28,7 +28,8 @@ export default async function CalendarPage() {
   );
 
   return (
-    <Shell user={user} title="Calendar">
+    <>
+      <PageTitle>Calendar</PageTitle>
       <p className="mt-2 text-sm text-ink-muted">
         Tap any day to log or fix a weigh-in.
       </p>
@@ -48,6 +49,6 @@ export default async function CalendarPage() {
       >
         ← Back to weight
       </Link>
-    </Shell>
+    </>
   );
 }

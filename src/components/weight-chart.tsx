@@ -91,6 +91,11 @@ export function WeightChart({
   const floor = goalInFrame ? Math.min(domainLo, goal - pad * 0.5) : domainLo;
   const base = goalInFrame ? goal : floor;
 
+  // Whole pounds are the right resolution for a normal range, but a short
+  // history — or the same range read in kilograms — can span less than the
+  // gap between ticks, and the axis then repeats one number down its length.
+  const tickDigits = domainHi - floor < 8 ? 1 : 0;
+
   const empty = data.length === 0;
 
   return (
@@ -194,7 +199,7 @@ export function WeightChart({
               axisLine={false}
               tickLine={false}
               width={46}
-              tickFormatter={(v: number) => v.toFixed(0)}
+              tickFormatter={(v: number) => v.toFixed(tickDigits)}
             />
 
             {goalInFrame && (

@@ -5,7 +5,7 @@ import { currentUser } from "@/lib/auth";
 import { addDays, formatDayLong, isDayKey, todayIn } from "@/lib/dates";
 import { getEstimator } from "@/lib/ai/estimator";
 import { mealNutrition, sumNutrition } from "@/lib/nutrition";
-import { Shell } from "@/components/shell";
+import { PageTitle } from "@/components/page-title";
 import { MealForm } from "@/components/meal-form";
 import { DayTotals } from "@/components/day-totals";
 import { ActiveBurnField } from "@/components/active-burn-field";
@@ -53,7 +53,8 @@ export default async function MealsPage(props: PageProps<"/meals">) {
     : null;
 
   return (
-    <Shell user={user} title="Meals">
+    <>
+      <PageTitle>Meals</PageTitle>
       <nav
         aria-label="Choose a day"
         className="mt-5 flex items-center justify-between gap-3"
@@ -100,7 +101,7 @@ export default async function MealsPage(props: PageProps<"/meals">) {
           Nothing logged for this day yet. Add as many meals as you like.
         </p>
       )}
-    </Shell>
+    </>
   );
 }
 

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { currentUser, hasAnyUser } from "@/lib/auth";
+import { currentUser } from "@/lib/auth";
 import { todayIn, formatDayShort } from "@/lib/dates";
 import { formatDelta, fromLbs, formatWeight, type Units } from "@/lib/units";
-import { Shell } from "@/components/shell";
+import { PageTitle } from "@/components/page-title";
+import { UnitSwitch } from "@/components/unit-switch";
 import { WeighInForm } from "@/components/weigh-in-form";
 import { WeightChart } from "@/components/weight-chart";
 import { deleteWeightAction } from "@/app/actions/weight";
@@ -20,7 +21,6 @@ import { addDays } from "@/lib/dates";
 export const dynamic = "force-dynamic";
 
 export default async function WeightPage() {
-  if (!(await hasAnyUser())) redirect("/signup");
   const user = await currentUser();
   if (!user) redirect("/login");
 
@@ -109,7 +109,13 @@ export default async function WeightPage() {
   const streak = weighInStreak([...loggedDates], today);
 
   return (
-    <Shell user={user} title="Weight">
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <PageTitle>Weight</PageTitle>
+        {/* Governs the whole tab, so it sits with the title rather than beside
+            any one figure it happens to change. */}
+        <UnitSwitch units={units} />
+      </div>
       {showBanner && (
         <WaterWeightBanner
           gainLbs={fromLbs(overnightGain, units)}
@@ -266,7 +272,7 @@ export default async function WeightPage() {
           </ul>
         </section>
       )}
-    </Shell>
+    </>
   );
 }
 

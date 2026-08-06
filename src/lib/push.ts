@@ -76,3 +76,26 @@ export async function pushToUser(
 
   return { sent, pruned: dead.length };
 }
+
+/**
+ * Notify someone about friend activity, if they asked to hear about it.
+ *
+ * Deliberately fire-and-forget: a push service being slow or down is not a
+ * reason for the request or the note itself to fail, so this never throws
+ * into the caller.
+ */
+export async function notifyFriendActivity(
+  toId: string,
+  payload: PushPayload,
+): Promise<void> {
+  try {
+    const to = await prisma.user.findUnique({
+      where: { id: toId },
+      select: { notifyFriends: true },
+    });
+    if (!to?.notifyFriends) return;
+    await pushToUser(toId, payload);
+  } catch (error) {
+    console.error("friend notification failed", error);
+  }
+}

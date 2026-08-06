@@ -1,17 +1,30 @@
-import { Nav } from "@/components/nav";
-import { logoutAction } from "@/app/actions/auth";
+import { redirect } from "next/navigation";
+import { currentUser, hasAnyUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import type { SessionUser } from "@/lib/auth";
+import { logoutAction } from "@/app/actions/auth";
+import { Nav } from "@/components/nav";
 
-export async function Shell({
-  user,
-  title,
+export const dynamic = "force-dynamic";
+
+/**
+ * Everything behind the PIN shares this frame.
+ *
+ * The header and the tab bar live here rather than inside each page, which is
+ * what makes switching tabs feel like switching tabs: they stay mounted, so a
+ * tap only swaps the content below them. When they were part of every page,
+ * every navigation tore down the whole chrome and rebuilt it, and the tab you
+ * pressed stayed unlit until the server answered.
+ */
+export default async function AppLayout({
   children,
 }: {
-  user: Pick<SessionUser, "id" | "name">;
-  title: string;
   children: React.ReactNode;
 }) {
+  const user = await currentUser();
+  // The count only decides where to send a stranger, so it stays off the path
+  // of every request from someone already signed in.
+  if (!user) redirect((await hasAnyUser()) ? "/login" : "/signup");
+
   // A cheer nobody notices is a cheer that did not happen, and Friends is the
   // one tab with something that arrives while you are elsewhere.
   const [requests, unread] = await Promise.all([
@@ -47,9 +60,6 @@ export async function Shell({
 
       {/* Bottom padding clears the fixed mobile nav bar. */}
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 pt-7 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-6 md:pb-16">
-        <h1 className="settle font-cond text-[2rem] font-bold leading-none tracking-tight">
-          {title}
-        </h1>
         {children}
       </main>
     </>

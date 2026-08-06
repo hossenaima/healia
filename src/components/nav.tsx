@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
+import { useOptimistic, useTransition } from "react";
 
 const LINKS = [
   { href: "/", label: "Weight" },
@@ -11,12 +12,23 @@ const LINKS = [
   { href: "/settings", label: "Settings" },
 ];
 
+function isActive(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
 /**
  * Bottom bar on phones, where this app is actually used at 7am, and a top rail
  * on wider screens.
+ *
+ * The tab you press lights up on the press, not when the server answers. The
+ * pathname only changes once the new route is ready, so on its own it leaves
+ * every tab looking a beat behind; the optimistic value covers that gap and
+ * falls back automatically if the navigation is abandoned.
  */
 export function Nav({ waiting = 0 }: { waiting?: number }) {
   const pathname = usePathname();
+  const [, startTransition] = useTransition();
+  const [heading, setHeading] = useOptimistic(pathname);
 
   return (
     <nav
@@ -30,20 +42,20 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
     >
       <ul className="mx-auto flex max-w-2xl px-2 md:gap-1 md:px-6">
         {LINKS.map((link) => {
-          const active =
-            link.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(link.href);
+          // What the URL says, versus what the tap has promised.
+          const current = isActive(pathname, link.href);
+          const lit = isActive(heading, link.href);
 
           return (
             <li key={link.href} className="flex-1 md:flex-none">
               <Link
                 href={link.href}
-                aria-current={active ? "page" : undefined}
+                aria-current={current ? "page" : undefined}
+                onNavigate={() => startTransition(() => setHeading(link.href))}
                 className={`
                   eyebrow relative flex items-center justify-center py-4
                   transition-colors md:px-4 md:py-3
-                  ${active ? "!text-ink" : "hover:!text-ink-muted"}
+                  ${lit ? "!text-ink" : "hover:!text-ink-muted"}
                 `}
               >
                 {link.label}
@@ -55,7 +67,7 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
                     {waiting}
                   </span>
                 )}
-                {active && (
+                {lit && (
                   <span
                     aria-hidden
                     className="
@@ -64,11 +76,32 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
                     "
                   />
                 )}
+                <PendingHint />
               </Link>
             </li>
           );
         })}
       </ul>
     </nav>
+  );
+}
+
+/**
+ * A hairline that creeps across the tab while its route is still in flight —
+ * the case where the prefetch has not landed, typically a cold or slow
+ * connection. Always rendered, so it cannot shift the layout, and delayed, so
+ * a fast navigation never flashes it.
+ */
+function PendingHint() {
+  const { pending } = useLinkStatus();
+
+  return (
+    <span
+      aria-hidden
+      className={`
+        absolute inset-x-4 top-0 h-0.5 origin-left rounded-full bg-trace/60
+        ${pending ? "nav-hint" : "scale-x-0 opacity-0"}
+      `}
+    />
   );
 }

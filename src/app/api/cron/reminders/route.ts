@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   const now = new Date();
 
   const candidates = await prisma.user.findMany({
-    where: { reminderHour: { not: null }, pushSubscriptions: { some: {} } },
+    where: { notifyWeighIn: true, pushSubscriptions: { some: {} } },
     select: {
       id: true,
       timezone: true,

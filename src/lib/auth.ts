@@ -1,3 +1,4 @@
+import { cache } from "react";
 import "server-only";
 
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
@@ -27,7 +28,9 @@ export type SessionUser = {
   heightInches: number | null;
   units: Units;
   timezone: string;
-  reminderHour: number | null;
+  notifyWeighIn: boolean;
+  notifyFriends: boolean;
+  reminderHour: number;
   calorieTarget: number | null;
   proteinTargetG: number | null;
   fiberTargetG: number | null;
@@ -76,8 +79,12 @@ export async function endSession() {
  * The signed-in user, or null. The account is re-read from the database on
  * every call rather than trusted from the cookie, so a deleted account cannot
  * keep acting on a still-valid token.
+ *
+ * Deduped per request: the layout and the page inside it both ask who is
+ * signed in, and without this that is two identical round trips on the
+ * critical path of every navigation.
  */
-export async function currentUser(): Promise<SessionUser | null> {
+export const currentUser = cache(async function currentUser(): Promise<SessionUser | null> {
   const store = await cookies();
   const userId = userIdFromToken(store.get(SESSION_COOKIE)?.value);
   if (!userId) return null;
@@ -94,12 +101,14 @@ export async function currentUser(): Promise<SessionUser | null> {
     heightInches: user.heightInches,
     units: user.units === "kg" ? "kg" : "lb",
     timezone: user.timezone,
+    notifyWeighIn: user.notifyWeighIn,
+    notifyFriends: user.notifyFriends,
     reminderHour: user.reminderHour,
     calorieTarget: user.calorieTarget,
     proteinTargetG: user.proteinTargetG,
     fiberTargetG: user.fiberTargetG,
   };
-}
+});
 
 /**
  * Guard for every server action and protected page. Proxy does an optimistic

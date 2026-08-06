@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   requestFriendAction,
   respondToRequestAction,
@@ -141,6 +141,14 @@ function FriendCard({
     INITIAL,
   );
   const [body, setBody] = useState("");
+
+  // Emptying the box is the receipt. Leaving the text sitting there reads as
+  // "nothing happened", and the obvious response to that is to press Send
+  // again. `useActionState` hands back a fresh object per submission, so this
+  // fires once per send rather than only when the message changes.
+  useEffect(() => {
+    if (state.ok) setBody("");
+  }, [state]);
 
   return (
     <li className="card p-4">

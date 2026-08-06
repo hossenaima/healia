@@ -26,6 +26,16 @@ export function WeighInForm({
   useEffect(() => setDate(clientToday()), []);
 
   const [value, setValue] = useState(existing === null ? "" : String(existing));
+
+  // The server re-renders this with a converted number when the unit changes,
+  // and with the saved number after a save. Without following that, switching
+  // to kg leaves a pounds figure sitting under a "kg" label.
+  const [lastSent, setLastSent] = useState(existing);
+  if (lastSent !== existing) {
+    setLastSent(existing);
+    setValue(existing === null ? "" : String(existing));
+  }
+
   const editing = existing !== null;
 
   return (

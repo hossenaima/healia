@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { getEstimator } from "@/lib/ai/estimator";
 import { fromLbs } from "@/lib/units";
-import { Shell } from "@/components/shell";
+import { PageTitle } from "@/components/page-title";
 import { GoalForm, PinChangeForm } from "@/components/settings-forms";
-import { ReminderSettings } from "@/components/reminder-settings";
+import { NotificationSettings } from "@/components/notification-settings";
 import { prisma } from "@/lib/db";
 
 export default async function SettingsPage() {
@@ -19,7 +19,8 @@ export default async function SettingsPage() {
   });
 
   return (
-    <Shell user={user} title="Settings">
+    <>
+      <PageTitle>Settings</PageTitle>
       <section className="mt-6">
         <h2 className="eyebrow">Goal &amp; targets</h2>
         <GoalForm
@@ -50,9 +51,11 @@ export default async function SettingsPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="eyebrow">Reminders</h2>
-        <ReminderSettings
+        <h2 className="eyebrow">Notifications</h2>
+        <NotificationSettings
           publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+          notifyWeighIn={user.notifyWeighIn}
+          notifyFriends={user.notifyFriends}
           reminderHour={user.reminderHour}
           deviceCount={deviceCount}
         />
@@ -74,7 +77,7 @@ export default async function SettingsPage() {
           </p>
         </div>
       </section>
-    </Shell>
+    </>
   );
 }
 

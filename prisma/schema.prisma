@@ -46,8 +46,14 @@ model User {
   proteinTargetG Int?
   fiberTargetG   Int?
 
-  /// Local hour (0–23) to send the weigh-in reminder. Null means no reminder.
-  reminderHour Int?
+  /// What notifications this account wants. Both default on: someone who has
+  /// just granted permission has said yes to being notified, and making them
+  /// then go and switch each kind on separately would be asking twice.
+  notifyWeighIn Boolean @default(true)
+  notifyFriends Boolean @default(true)
+  /// Local hour (0–23) for the weigh-in reminder. `notifyWeighIn` decides
+  /// whether it is sent at all; this only decides when.
+  reminderHour  Int     @default(8)
   /// Day key of the last reminder actually sent. The schedulers that call the
   /// reminder route are all at-least-once, so this is what keeps a retry from
   /// becoming a second notification.

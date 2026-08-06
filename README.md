@@ -12,7 +12,9 @@ database (Supabase).
 
 **Weight** (`/`) — log this morning's weight, see the trace descend toward your
 goal, and review or correct past entries. Re-submitting a date overwrites it, so
-there is exactly one weigh-in per day.
+there is exactly one weigh-in per day. The **lb / kg** switch beside the title
+changes the unit for the whole app at once; weights are stored in pounds either
+way, so nothing is ever converted twice.
 
 **Calendar** (`/calendar`) — tap any day to log or correct a weigh-in, see which
 days you have logged, and track your streak. Also imports an Apple Health export
@@ -32,12 +34,18 @@ streak, and you can send a short note of encouragement. Friends never see each
 other's meals. Requests and unread notes show as a count on the Friends tab.
 
 **Settings** (`/settings`) — goal weight, start weight, units (lb or kg), your
-PIN, and a daily weigh-in reminder.
+PIN, and notifications.
 
-## Reminders
+## Notifications
 
-Pick an hour in Settings and Helia sends one notification a day at that hour in
-your own timezone — and skips it entirely on days you have already logged.
+Turn them on once per device, then choose what you want:
+
+- **Morning weigh-in** — one notification a day at an hour you pick, in your own
+  timezone, skipped entirely on days you have already logged. Defaults to 8am.
+- **Friend activity** — when someone adds you or sends you a note.
+
+Both are on by default: granting permission is the yes, so there is no second
+round of switches to find.
 
 On **iPhone**, notifications only reach apps on the Home Screen, never Safari
 tabs. Open Helia in Safari, tap Share, then **Add to Home Screen**, and turn

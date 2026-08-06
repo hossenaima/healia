@@ -165,7 +165,21 @@ account's data.
 See `.env.example`. `GEMINI_API_KEY` turns on meal estimation; without
 it the app still works and the button explains why it is disabled.
 
-## Friends and reminders
+## Navigation
+
+- The header and tab bar live in `src/app/(app)/layout.tsx`, not in each page.
+  When they were part of every page, a tab switch tore down the whole chrome
+  and rebuilt it, so nothing on screen moved until the server answered — which
+  is what "the tabs take a while" actually was.
+- `(app)/loading.tsx` is what makes these dynamic routes prefetchable at all;
+  without a loading file Next skips prefetching them entirely.
+- The nav lights the pressed tab optimistically, because `usePathname` only
+  changes once the route is ready. `useLinkStatus` adds a creeping hairline
+  for the case where the prefetch has not landed.
+- `currentUser()` is wrapped in React `cache()`: the layout and the page both
+  ask, and without it that is two identical queries per navigation.
+
+## Friends and notifications
 
 - A friendship is one row with a `status`, not two mirrored rows. Both the
   requester and addressee indexes exist because both directions get queried.
@@ -174,6 +188,12 @@ it the app still works and the button explains why it is disabled.
   copy — keep it that way.
 - `requestFriendAction` returns the same message whether or not the name
   exists, so the form cannot be used to discover who has an account.
+- Notification kinds are per account (`notifyWeighIn`, `notifyFriends`), and
+  `reminderHour` is only *when*, never *whether* — collapsing the two into a
+  nullable hour meant turning reminders off also forgot the chosen time.
+- The first device to subscribe switches both kinds on. Granting permission is
+  the yes; a settings panel where everything is still off asks it twice. Only
+  the first, so a second device cannot undo choices already made.
 - Reminders need an **hourly** sweep, not a daily one: "8am" is a different
   instant for every account, so a once-a-day schedule can only ever serve one
   timezone. Vercel's Hobby plan caps crons at one run per day and rejects the
@@ -187,6 +207,15 @@ it the app still works and the button explains why it is disabled.
   and a redirect to `/login` would turn a failed cron into a silent 307.
 - `/sw.js`, `/manifest.webmanifest`, and `/icon-*.png` are exempt too: the OS
   fetches them during install, outside any session.
+
+## Units
+
+- Weights are stored in pounds, always. `units` only decides how they are
+  rendered, which is why the switch on the Weight tab cannot leave the chart
+  and the figures disagreeing — there is one value and one conversion.
+- Client inputs that mirror a server-rendered number have to follow it when it
+  changes. `WeighInForm` seeds state from a prop, so switching to kg left a
+  pounds figure under a "kg" label until it started tracking the prop.
 
 ## Operational notes
 
@@ -206,5 +235,6 @@ it the app still works and the button explains why it is disabled.
 - The reminder workflow needs two GitHub repo secrets, `APP_URL` and
   `CRON_SECRET`. Without them the hourly sweep fails silently and only the
   daily Vercel backstop runs.
-- Friend requests and cheers surface as a count on the Friends tab. They do not
-  send a push — only the weigh-in reminder does.
+- Friend requests and notes push as well as showing a count on the Friends tab.
+  `notifyFriendActivity` never throws into its caller: a push service being
+  slow is not a reason for the request itself to fail.

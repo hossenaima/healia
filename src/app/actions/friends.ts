@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser, toHandle } from "@/lib/auth";
+import { notifyFriendActivity } from "@/lib/push";
 
 export type FriendResult = { ok: boolean; error?: string; message?: string };
 
@@ -59,6 +60,13 @@ export async function requestFriendAction(
 
   await prisma.friendship.create({
     data: { requesterId: me.id, addresseeId: them.id },
+  });
+
+  await notifyFriendActivity(them.id, {
+    title: "Friend request",
+    body: `${me.name} wants to be friends on Helia.`,
+    url: "/friends",
+    tag: "friend-request",
   });
 
   revalidatePath("/friends");
@@ -141,6 +149,15 @@ export async function sendEncouragementAction(
 
   await prisma.encouragement.create({
     data: { fromId: me.id, toId: parsed.data.toId, body: parsed.data.body },
+  });
+
+  await notifyFriendActivity(parsed.data.toId, {
+    title: `${me.name} says`,
+    body: parsed.data.body,
+    url: "/friends",
+    // Not tagged per-sender: a second note should not silently replace the
+    // first one sitting unread in the tray.
+    tag: `note-${Date.now()}`,
   });
 
   revalidatePath("/friends");

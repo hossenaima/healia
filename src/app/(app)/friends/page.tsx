@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { friendSummaries } from "@/lib/friends";
-import { Shell } from "@/components/shell";
+import { PageTitle } from "@/components/page-title";
 import { FriendsPanel } from "@/components/friends-panel";
 import { Encouragements } from "@/components/encouragements";
 
@@ -32,7 +32,8 @@ export default async function FriendsPage() {
   ]);
 
   return (
-    <Shell user={user} title="Friends">
+    <>
+      <PageTitle>Friends</PageTitle>
       <p className="mt-2 text-sm text-ink-muted">
         Cheer each other on. Friends see your weigh-ins and streak — never your
         meals.
@@ -54,6 +55,6 @@ export default async function FriendsPage() {
         outgoing={outgoing.map((r) => ({ id: r.id, name: r.addressee.name }))}
         units={user.units}
       />
-    </Shell>
+    </>
   );
 }

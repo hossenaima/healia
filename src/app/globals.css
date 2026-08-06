@@ -186,35 +186,24 @@ body {
   }
 }
 
-.glass {
-  position: relative;
-  border-radius: 1.125rem;
-  background: var(--glass-tint);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow:
-    inset 0 1px 0 var(--glass-sheen),
-    inset 0 0 0 1px var(--glass-rim),
-    var(--lift);
-}
-
-/* The specular highlight: brightest at the top edge, gone by a third down.
-   This is what separates glass from a plain translucent panel. */
-.glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    to bottom,
-    var(--glass-sheen) 0%,
-    transparent 38%
-  );
-  pointer-events: none;
-}
-
-.glass > * {
-  position: relative;
+/*
+ * A positioned ancestor for the ::before and ::after layers — at specificity
+ * zero, so it cannot decide where the element itself sits.
+ *
+ * This class is worn by the tab bar (`fixed bottom-0`) and the header
+ * (`sticky top-0`). Unlayered, it beat both utilities and the bar sat in
+ * normal flow under the header, scrolling away with the page.
+ *
+ * `:where()` alone does not fix that. Tailwind v4 emits utilities into
+ * `@layer utilities`, and **unlayered CSS wins over any layer whatever its
+ * specificity** — so a zero-specificity unlayered rule still beat `fixed`.
+ * Being in `components`, which the import orders before `utilities`, is what
+ * actually lets the utility through.
+ */
+@layer components {
+  :where(.card, .tile, .glass) {
+    position: relative;
+  }
 }
 
 /*
@@ -228,7 +217,6 @@ body {
 .card,
 .tile,
 .glass {
-  position: relative;
   isolation: isolate;
   overflow: hidden;
   border-radius: 1.75rem;
@@ -266,10 +254,12 @@ body {
   z-index: -1;
 }
 
-.card > *,
-.tile > *,
-.glass > * {
-  position: relative;
+/* Content sits above the sweep and the refraction. Layered too, so a child
+   that needs its own positioning still gets it. */
+@layer components {
+  :where(.card, .tile, .glass) > * {
+    position: relative;
+  }
 }
 
 /*

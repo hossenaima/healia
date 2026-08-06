@@ -298,9 +298,25 @@ Grouped by where they bite.
 
 ### CSS
 
-- **A utility class must never set `display`.** `.eyebrow` set `display: block`;
-  because it is defined after the Tailwind import it silently beat `flex`
-  everywhere the two were combined, which knocked the nav labels off centre.
+- **Unlayered CSS beats every Tailwind utility, whatever the specificity.**
+  This is the single most expensive trap in this codebase and it has bitten
+  three times. `@import "tailwindcss"` emits utilities into `@layer utilities`,
+  and an unlayered rule wins over *any* layer — so a plain `.glass { position:
+  relative }` defeated `fixed` on the tab bar and `sticky` on the header, and
+  `.eyebrow { display: block }` defeated `flex` on the nav labels. **Lowering
+  specificity does not help**: `:where(.glass)` at specificity zero still won,
+  because layer order is checked before specificity. The fix is to put the
+  component rule inside `@layer components`, which the import orders *before*
+  `utilities`. Every `!` prefix scattered through the components
+  (`!rounded-none`, `!text-ink`, `!py-2`…) is a workaround for this same thing;
+  they can be deleted as their rules move into the layer.
+- **A class describing how something looks must not set where it sits.** Even
+  layered correctly, `position` on `.glass` is a smell — the material and the
+  layout are different concerns.
+- **A dead duplicate can keep contributing.** An entire superseded `.glass`
+  frost implementation sat above the lens one for weeks; the later block won
+  most properties so nothing looked wrong, and it was only found while chasing
+  the position bug. Delete a superseded block when you supersede it.
 - **`viewport-fit=cover` is required** for `env(safe-area-inset-*)` to be
   non-zero on iPhone. Without it the bottom bar sits under the home indicator.
 - **`backdrop-filter: url(#filter)` does not work in Chrome.** SVG filters are

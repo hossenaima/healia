@@ -93,3 +93,14 @@ export function formatDayLong(day: string): string {
     year: "numeric",
   }).format(dayKeyToDate(day));
 }
+
+/** "Aug 6, 8:14 AM" in a given zone — a note needs the hour, not just the day. */
+export function formatMomentIn(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: isValidTimezone(timeZone) ? timeZone : DEFAULT_TIMEZONE,
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}

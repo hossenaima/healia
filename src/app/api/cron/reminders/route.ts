@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { dayKeyIn, isValidTimezone, todayIn } from "@/lib/dates";
 import { pushToUser } from "@/lib/push";
+import { noteCutoff } from "@/lib/friends";
 
 /**
  * Reminder sweep. Meant to be called every hour — see `.github/workflows` —
@@ -23,6 +24,13 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
+
+  // Housekeeping on the sweep that already runs. The friends page filters
+  // expired notes out regardless, so this is only about not keeping text
+  // someone was told had gone.
+  const { count: notesPurged } = await prisma.encouragement.deleteMany({
+    where: { readAt: { lt: noteCutoff(now) } },
+  });
 
   const candidates = await prisma.user.findMany({
     where: { notifyWeighIn: true, pushSubscriptions: { some: {} } },
@@ -85,6 +93,7 @@ export async function GET(request: NextRequest) {
     notified,
     skippedAlreadyLogged,
     skippedAlreadySent,
+    notesPurged,
     at: todayIn("UTC"),
   });
 }

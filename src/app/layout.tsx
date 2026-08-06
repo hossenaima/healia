@@ -20,7 +20,12 @@ export const metadata: Metadata = {
   // iPhone only delivers push to a Home Screen app, so being installable is
   // not a nicety here — it is what makes reminders possible at all.
   appleWebApp: { capable: true, title: "Helia", statusBarStyle: "default" },
-  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
+  // 180×180 and opaque, because iOS composites a transparent touch icon onto
+  // black and applies its own corner radius to whatever it is given.
+  icons: {
+    icon: "/icon-192.png",
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  },
 };
 
 export const viewport: Viewport = {

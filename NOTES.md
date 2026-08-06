@@ -165,6 +165,17 @@ account's data.
 See `.env.example`. `GEMINI_API_KEY` turns on meal estimation; without
 it the app still works and the button explains why it is disabled.
 
+## Icons
+
+- `apple-touch-icon.png` is 180×180, **opaque and un-rounded**: iOS composites
+  a transparent touch icon onto black and applies its own mask, so supplying
+  pre-rounded corners double-rounds it.
+- The mark stays inside 23–77% of the canvas so it also survives Android's
+  maskable safe-zone crop, and uses the literal `--ground` and `--trace`
+  tokens — the icon and the chart line are the same green.
+- An S-curve was tried first. At home-screen size two inflections stop reading
+  as a line and start reading as a squiggle; one descent survives the scale.
+
 ## Look
 
 - The trace teal is deliberately under the `dataviz` validator's categorical
@@ -271,6 +282,21 @@ already paid for or is a CSS keyframe:
   fixed 46px was fine for "180" and quietly cropped the leading digit off
   "180.4" once narrow ranges started getting a decimal.
 
+## Working on this database safely
+
+- **Test mutations must be scoped to test accounts.** An `UPDATE
+  "Encouragement" SET "readAt" = now() - interval '13 hours'` written to age
+  one test note aged every row in the table, and the next cron pass deleted
+  four real messages between the two live accounts. There is no local
+  database and no point-in-time recovery on the Supabase free tier: `DATABASE_URL`
+  is production. Every write from a script gets a `where` naming the test
+  handle or id.
+- `createdAt`/`readAt` are `timestamp without time zone` holding UTC instants,
+  which Prisma writes and reads as UTC. The raw `pg` client parses them as
+  *local* time, so a `SELECT` through a script renders them shifted by the
+  machine's offset. Use `to_char(col, 'YYYY-MM-DD HH24:MI:SS')` when the exact
+  stored value matters, and never round-trip a displayed value back in.
+
 ## Operational notes
 
 - **No PIN recovery by design.** `scripts/reset-pin.mjs` is the escape hatch;
@@ -289,6 +315,12 @@ already paid for or is a CSS keyframe:
 - The reminder workflow needs two GitHub repo secrets, `APP_URL` and
   `CRON_SECRET`. Without them the hourly sweep fails silently and only the
   daily Vercel backstop runs.
+- A note is deleted 12 hours after it is **read**, not after it is sent, so
+  nothing can vanish before it has been seen — an unread note waits
+  indefinitely. The friends page filters expired ones out so the moment is
+  exact, and the hourly cron deletes them so text the reader was told had gone
+  is not still sitting in the table. The card shows a live "fades in 11h",
+  because a message that silently disappears reads as a bug.
 - Friend requests and notes push as well as showing a count on the Friends tab.
   `notifyFriendActivity` never throws into its caller: a push service being
   slow is not a reason for the request itself to fail.

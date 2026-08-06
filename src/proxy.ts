@@ -31,6 +31,6 @@ export const config = {
     // Everything except Next internals and static assets. The manifest, its
     // icons, and the service worker are fetched by the OS during install and
     // by the browser on update — a redirect to /login breaks both.
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|icon-|icons/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|icon-|apple-touch-icon|icons/).*)",
   ],
 };

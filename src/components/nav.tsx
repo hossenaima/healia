@@ -29,6 +29,7 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
   const pathname = usePathname();
   const [, startTransition] = useTransition();
   const [heading, setHeading] = useOptimistic(pathname);
+  const litIndex = LINKS.findIndex((l) => isActive(heading, l.href));
 
   return (
     <nav
@@ -40,14 +41,29 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
         md:static md:!bg-transparent md:!shadow-none md:!backdrop-blur-none md:pb-0 md:before:hidden
       "
     >
-      <ul className="mx-auto flex max-w-2xl px-2 md:gap-1 md:px-6">
+      {/* Equal-width tabs at every size, so the marker's position is the
+          index and nothing has to be measured. */}
+      <ul className="relative mx-auto flex max-w-2xl px-2 md:px-6">
+        {litIndex >= 0 && (
+          <span
+            aria-hidden
+            className="nav-marker pointer-events-none absolute inset-y-0 left-0"
+            style={{
+              width: `${100 / LINKS.length}%`,
+              transform: `translateX(${litIndex * 100}%)`,
+            }}
+          >
+            <span className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-trace md:inset-x-6 md:top-auto md:bottom-0" />
+          </span>
+        )}
+
         {LINKS.map((link) => {
           // What the URL says, versus what the tap has promised.
           const current = isActive(pathname, link.href);
           const lit = isActive(heading, link.href);
 
           return (
-            <li key={link.href} className="flex-1 md:flex-none">
+            <li key={link.href} className="flex-1">
               <Link
                 href={link.href}
                 aria-current={current ? "page" : undefined}
@@ -66,15 +82,6 @@ export function Nav({ waiting = 0 }: { waiting?: number }) {
                   >
                     {waiting}
                   </span>
-                )}
-                {lit && (
-                  <span
-                    aria-hidden
-                    className="
-                      absolute inset-x-4 top-0 h-0.5 bg-trace
-                      md:inset-x-3 md:top-auto md:bottom-0
-                    "
-                  />
                 )}
                 <PendingHint />
               </Link>

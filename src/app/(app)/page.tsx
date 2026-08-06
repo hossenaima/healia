@@ -233,7 +233,8 @@ export default async function WeightPage() {
                 return (
                   <li
                     key={entry.date}
-                    className="flex items-center gap-3 px-4 py-3"
+                    className="settle flex items-center gap-3 px-4 py-3"
+                    style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm">{formatDayShort(entry.date)}</p>

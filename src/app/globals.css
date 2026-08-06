@@ -324,7 +324,18 @@ body {
   transition:
     background-color 140ms ease,
     color 140ms ease,
-    opacity 140ms ease;
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+/* `-webkit-tap-highlight-color` is off globally, so without this a tap on a
+   phone produces no acknowledgement whatsoever until the server answers. */
+.btn:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.chip:not(:disabled):active {
+  transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -385,6 +396,12 @@ body {
     border-color 140ms ease;
 }
 
+/* The lit tab marker is one element that moves, not five that blink on and
+   off. Tabs are equal width, so its position is just the index. */
+.nav-marker {
+  transition: transform 240ms cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
 .nav-hint {
   animation: nav-hint 900ms cubic-bezier(0.16, 0.9, 0.3, 1) 120ms both;
 }
@@ -396,5 +413,15 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* The rule above looks total and is not. View-transition pseudo-elements
+     live in the top layer and are not descendants of anything, so `*` never
+     matches them — they have to be named. */
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
 }

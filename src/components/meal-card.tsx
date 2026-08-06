@@ -35,7 +35,13 @@ export type MealCardMeal = {
  * the number if it is wrong. An estimate you cannot argue with is just a number
  * you have to trust.
  */
-export function MealCard({ meal }: { meal: MealCardMeal }) {
+export function MealCard({
+  meal,
+  index = 0,
+}: {
+  meal: MealCardMeal;
+  index?: number;
+}) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, startSaving] = useTransition();
@@ -94,7 +100,11 @@ export function MealCard({ meal }: { meal: MealCardMeal }) {
   }
 
   return (
-    <li className="card p-4">
+    <li
+      className="settle card p-4"
+      // Capped, or a long day's tenth meal would still be waiting.
+      style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
+    >
       <div className="flex items-baseline justify-between gap-3">
         <button
           type="button"

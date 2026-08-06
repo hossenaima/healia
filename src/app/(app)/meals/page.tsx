@@ -89,8 +89,8 @@ export default async function MealsPage(props: PageProps<"/meals">) {
           <h2 className="eyebrow">Log</h2>
 
           <ul className="mt-3 space-y-3">
-            {meals.map((meal) => (
-              <MealCard key={meal.id} meal={meal} />
+            {meals.map((meal, i) => (
+              <MealCard key={meal.id} meal={meal} index={i} />
             ))}
           </ul>
         </section>

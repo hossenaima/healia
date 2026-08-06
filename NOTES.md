@@ -190,6 +190,30 @@ it the app still works and the button explains why it is disabled.
   so the button is the flex item. Wrapped in a form it was laid out as one and
   sat two pixels below the account name.
 
+## Motion
+
+Deliberately no animation library. Motion is ~42kB gzipped on `motion/react`
+and anime.js ~13kB for `animate()` alone, and everything wanted here is either
+already paid for or is a CSS keyframe:
+
+- Tab crossfades are React's `<ViewTransition>` via `experimental.viewTransition`
+  and `(app)/template.tsx`. A template remounts per navigation where a layout
+  does not, which is what gives React two states to fade between.
+- The lit tab marker is one absolutely positioned element translated by index,
+  which is why the tabs are equal width at every size — nothing has to be
+  measured. Five peer tabs have no forward or back, so a directional slide
+  would be claiming a hierarchy that is not there.
+- Row entrances reuse the existing `settle` keyframe with a capped
+  `animationDelay`. That is what `stagger()` would have cost 17kB for.
+- The chart's trend line uses Recharts' own `isAnimationActive`. The daily area
+  stays static: two lines animating at once reads as a fidget.
+- **The `prefers-reduced-motion` block is narrower than it looks.** `*` does not
+  match `::view-transition-*` — those are top-layer pseudo-elements and are not
+  descendants of anything — so they are named explicitly. Any JS-driven
+  animation would need its own switch too; the CSS override cannot reach it.
+- If something ever genuinely needs interruptible springs or gesture-tracked
+  drag, `motion/react-mini`'s `useAnimate` is 3.2kB. Not `motion/react`.
+
 ## Navigation
 
 - The header and tab bar live in `src/app/(app)/layout.tsx`, not in each page.

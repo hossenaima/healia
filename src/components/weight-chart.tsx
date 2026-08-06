@@ -262,7 +262,12 @@ export function WeightChart({
               strokeWidth={2.5}
               dot={false}
               activeDot={false}
-              isAnimationActive={false}
+              // Recharts already ships this; only the trend draws in, because
+              // two lines animating at once reads as a fidget rather than as
+              // the eye being led along the one that matters.
+              isAnimationActive
+              animationDuration={520}
+              animationEasing="ease-out"
               connectNulls
             />
           </ComposedChart>

@@ -79,8 +79,8 @@ export function FriendsPanel({
           </p>
         ) : (
           <ul className="space-y-3">
-            {friends.map((f) => (
-              <FriendCard key={f.id} friend={f} units={units} />
+            {friends.map((f, i) => (
+              <FriendCard key={f.id} friend={f} units={units} index={i} />
             ))}
           </ul>
         )}
@@ -132,9 +132,11 @@ export function FriendsPanel({
 function FriendCard({
   friend,
   units,
+  index,
 }: {
   friend: FriendSummary;
   units: Units;
+  index: number;
 }) {
   const [state, sendAction, sending] = useActionState(
     sendEncouragementAction,
@@ -151,7 +153,11 @@ function FriendCard({
   }, [state]);
 
   return (
-    <li className="card p-4">
+    <li
+      className="settle card p-4"
+      // Capped, or the tenth row would still be waiting after half a second.
+      style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
+    >
       <div className="flex items-baseline justify-between gap-3">
         <p className="min-w-0 flex-1 truncate font-bold">{friend.name}</p>
         <span className="tnum shrink-0 text-sm">

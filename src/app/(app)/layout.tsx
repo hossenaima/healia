@@ -3,6 +3,7 @@ import { currentUser, hasAnyUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Nav } from "@/components/nav";
 import { NotificationBell } from "@/components/notification-bell";
+import { PushProvider } from "@/lib/use-push";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export default async function AppLayout({
   ]);
 
   return (
-    <>
+    <PushProvider>
       <header className="sticky top-0 z-20 glass !rounded-none !shadow-none md:bg-transparent md:backdrop-blur-none">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-5 py-4 md:px-6">
           <span className="font-cond text-lg font-bold tracking-tight">
@@ -61,6 +62,6 @@ export default async function AppLayout({
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 pt-7 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-6">
         {children}
       </main>
-    </>
+    </PushProvider>
   );
 }

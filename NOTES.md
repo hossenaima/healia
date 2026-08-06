@@ -549,9 +549,12 @@ Duolingo, Apple Fitness), not yet implemented:
 - **Signup is open and strangers have used it.** Accounts now include Matthew,
   Spider Man and Saleh alongside the two intended users. Close it with
   `ALLOW_SIGNUP=false`; existing accounts keep working.
-- **The reminder workflow needs two GitHub repo secrets**, `APP_URL` and
-  `CRON_SECRET`. Without them the hourly sweep fails and only the daily Vercel
-  backstop runs — so any hour other than 8am ET will not fire.
+- **The hourly reminder sweep has never run.** The workflow is committed
+  locally but the commits were never pushed, so `.github/workflows/` does not
+  exist on GitHub, and the two repo secrets (`APP_URL`, `CRON_SECRET`) are
+  unset. Only the daily Vercel cron at `0 12 * * *` fires — which is exactly
+  8am in `America/New_York`, so Eastern accounts got their reminder and
+  everyone else got nothing. Push, then set the secrets.
 - **Rotate the Gemini API key.** It was pasted in plaintext during the build.
   (The Supabase password and region were explicitly left alone on request.)
 

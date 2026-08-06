@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { setNotificationPrefsAction } from "@/app/actions/notifications";
+import {
+  sendTestNotificationAction,
+  setNotificationPrefsAction,
+} from "@/app/actions/notifications";
 import { usePush } from "@/lib/use-push";
 
 export function NotificationSettings({
@@ -17,9 +20,11 @@ export function NotificationSettings({
 }) {
   // Subscribing is shared with the header bell — see `usePush`. One flow with
   // this many quiet failure modes should not have two implementations.
-  const { support, subscribed, devices, busy, status, setStatus, enable, disable } =
-    usePush(deviceCount);
+  const { support, subscribed, busy, status, setStatus, enable, disable } = usePush();
   const [, startWorking] = useTransition();
+  const [devices, setDevices] = useState(deviceCount);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
   // Held locally so a toggle answers the tap rather than the round trip.
   const [weighIn, setWeighIn] = useState(notifyWeighIn);
@@ -27,11 +32,30 @@ export function NotificationSettings({
   const [hour, setHour] = useState(reminderHour);
 
   async function turnOn() {
+    const first = devices === 0;
     const ok = await enable();
+    if (!ok) return;
+    setDevices((n) => n + 1);
     // The first device turns both kinds on server-side; match that here.
-    if (ok && devices === 0) {
+    if (first) {
       setWeighIn(true);
       setFriends(true);
+    }
+  }
+
+  async function turnOff() {
+    await disable();
+    setDevices((n) => Math.max(0, n - 1));
+  }
+
+  async function sendTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await sendTestNotificationAction();
+      setTestResult(r.error ?? r.message ?? null);
+    } finally {
+      setTesting(false);
     }
   }
 
@@ -90,7 +114,7 @@ export function NotificationSettings({
         </div>
         <button
           type="button"
-          onClick={subscribed ? disable : turnOn}
+          onClick={subscribed ? turnOff : turnOn}
           disabled={busy}
           className={`btn !rounded-full shrink-0 !py-2 ${
             subscribed ? "btn-soft" : "btn-primary"
@@ -146,6 +170,32 @@ export function NotificationSettings({
               save({ notifyFriends: next });
             }}
           />
+        </div>
+      )}
+
+      {subscribed && (
+        <div className="mt-5 border-t border-rule pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-bold">Check it reaches you</p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                Sends one now, to every device on this account.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={sendTest}
+              disabled={testing}
+              className="btn btn-quiet shrink-0 !py-2"
+            >
+              {testing ? "Sending" : "Send a test"}
+            </button>
+          </div>
+          {testResult && (
+            <p role="status" className="mt-2 text-xs text-ink-muted">
+              {testResult}
+            </p>
+          )}
         </div>
       )}
 

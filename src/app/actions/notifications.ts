@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { pushToUser } from "@/lib/push";
 
 export type NotificationResult = {
   ok: boolean;
@@ -92,44 +91,4 @@ export async function setNotificationPrefsAction(input: {
   await prisma.user.update({ where: { id: me.id }, data });
   revalidatePath("/settings");
   return { ok: true };
-}
-
-/**
- * Push a notification to every device on this account, now.
- *
- * The only way to answer "will this actually reach my phone" without waiting
- * until tomorrow morning. It exercises the real path — VAPID signing, the push
- * service, the service worker — so a failure here is the same failure the
- * reminder would hit, and it reports how many devices it actually reached.
- */
-export async function sendTestNotificationAction(): Promise<NotificationResult> {
-  const me = await requireUser();
-
-  const devices = await prisma.pushSubscription.count({ where: { userId: me.id } });
-  if (devices === 0) {
-    return { ok: false, error: "No devices set up yet — turn notifications on first." };
-  }
-
-  const { sent, pruned } = await pushToUser(me.id, {
-    title: "Helia test",
-    body: "Notifications are working. This is what a reminder looks like.",
-    url: "/",
-    tag: `test-${Date.now()}`,
-  });
-
-  if (sent === 0) {
-    return {
-      ok: false,
-      error:
-        pruned > 0
-          ? `That device's subscription had expired and has been removed — turn notifications on again.`
-          : "The push service accepted nothing. Check the server's VAPID keys.",
-    };
-  }
-
-  revalidatePath("/settings");
-  return {
-    ok: true,
-    message: `Sent to ${sent} device${sent === 1 ? "" : "s"}. It should arrive in a second or two.`,
-  };
 }

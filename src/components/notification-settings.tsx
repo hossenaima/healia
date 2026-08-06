@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  sendTestNotificationAction,
-  setNotificationPrefsAction,
-} from "@/app/actions/notifications";
+import { setNotificationPrefsAction } from "@/app/actions/notifications";
 import { usePush } from "@/lib/use-push";
 
 export function NotificationSettings({
@@ -23,8 +20,6 @@ export function NotificationSettings({
   const { support, subscribed, busy, status, setStatus, enable, disable } = usePush();
   const [, startWorking] = useTransition();
   const [devices, setDevices] = useState(deviceCount);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<string | null>(null);
 
   // Held locally so a toggle answers the tap rather than the round trip.
   const [weighIn, setWeighIn] = useState(notifyWeighIn);
@@ -48,16 +43,6 @@ export function NotificationSettings({
     setDevices((n) => Math.max(0, n - 1));
   }
 
-  async function sendTest() {
-    setTesting(true);
-    setTestResult(null);
-    try {
-      const r = await sendTestNotificationAction();
-      setTestResult(r.error ?? r.message ?? null);
-    } finally {
-      setTesting(false);
-    }
-  }
 
   function save(input: {
     notifyWeighIn?: boolean;
@@ -170,32 +155,6 @@ export function NotificationSettings({
               save({ notifyFriends: next });
             }}
           />
-        </div>
-      )}
-
-      {subscribed && (
-        <div className="mt-5 border-t border-rule pt-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-bold">Check it reaches you</p>
-              <p className="mt-0.5 text-xs text-ink-muted">
-                Sends one now, to every device on this account.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={sendTest}
-              disabled={testing}
-              className="btn btn-quiet shrink-0 !py-2"
-            >
-              {testing ? "Sending" : "Send a test"}
-            </button>
-          </div>
-          {testResult && (
-            <p role="status" className="mt-2 text-xs text-ink-muted">
-              {testResult}
-            </p>
-          )}
         </div>
       )}
 

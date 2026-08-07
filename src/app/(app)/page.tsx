@@ -12,7 +12,8 @@ import { deleteWeightAction } from "@/app/actions/weight";
 import { WaterWeightBanner } from "@/components/water-weight-banner";
 import { ProgressRing } from "@/components/progress-ring";
 import { WeekStrip } from "@/components/week-strip";
-import { weekEnding, weighInStreak } from "@/lib/calendar";
+import { milestoneReached, weekEnding, weighInStreak } from "@/lib/calendar";
+import { MilestoneBanner } from "@/components/milestone-banner";
 import { flaggedMeals, rollingAverage } from "@/lib/nutrition";
 import { addDays } from "@/lib/dates";
 
@@ -116,6 +117,16 @@ export default async function WeightPage() {
             any one figure it happens to change. */}
         <UnitSwitch units={units} />
       </div>
+      <MilestoneBanner
+        milestone={milestoneReached({
+          startLbs,
+          currentLbs: latest?.weightLbs ?? null,
+          goalLbs: goalWeightLbs,
+          alreadyShown: user.milestoneLbs,
+        })}
+        units={units}
+      />
+
       {showBanner && (
         <WaterWeightBanner
           gainLbs={fromLbs(overnightGain, units)}

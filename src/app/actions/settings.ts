@@ -146,3 +146,18 @@ export async function syncTimezoneAction(timezone: string): Promise<void> {
   await prisma.user.update({ where: { id: me.id }, data: { timezone } });
   revalidatePath("/", "layout");
 }
+
+/**
+ * Record that a milestone has been congratulated, so it is not shown again.
+ *
+ * Called by the banner itself once it has been seen. Monotonic: gaining weight
+ * back and losing it again does not replay the same congratulation.
+ */
+export async function acknowledgeMilestoneAction(lbs: number): Promise<void> {
+  const me = await requireUser();
+  if (!Number.isFinite(lbs) || lbs <= me.milestoneLbs) return;
+  await prisma.user.update({
+    where: { id: me.id },
+    data: { milestoneLbs: Math.floor(lbs) },
+  });
+}

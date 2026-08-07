@@ -116,7 +116,7 @@ export function MealForm({
           disabled={pending || note.trim() === "" || name.trim() === ""}
           className="btn btn-soft flex-1"
         >
-          Save meal
+          Log it
         </button>
 
         <button

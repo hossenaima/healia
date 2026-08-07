@@ -4,6 +4,7 @@ import { hasAnyUser, signupAllowed } from "@/lib/auth";
 import { signupAction } from "@/app/actions/auth";
 import { PinForm } from "@/components/pin-form";
 import { AuthBackdrop } from "@/components/auth-backdrop";
+import { AuthIntro } from "@/components/auth-intro";
 
 // Auth state changes per request; nothing here may be prerendered at build time.
 export const dynamic = "force-dynamic";
@@ -16,18 +17,21 @@ export default async function SignupPage() {
     <main className="relative mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-16">
       <AuthBackdrop />
       <div className="settle">
-        <p className="eyebrow">{returning ? "New account" : "First run"}</p>
+        <p className="eyebrow">{returning ? "Join Helia" : "First run"}</p>
         <h1 className="mt-1 font-cond text-3xl font-bold tracking-tight">
-          {returning ? "Join Helia" : "Set up Helia"}
+          A quiet daily health log
         </h1>
         <p className="mt-2 text-sm text-ink-muted">
-          Your name is how you sign in. Pick a PIN of 4 to 10 digits — it is the
-          only thing standing between your log and anyone who finds the URL, so
-          make it one you do not use elsewhere.
+          Morning weigh-ins and meals, in about a minute a day.
         </p>
-        <p className="mt-2 text-sm text-ink-muted">
-          Each account is separate. Nobody else who uses this app can see your
-          weigh-ins or meals.
+
+        <AuthIntro />
+
+        <p className="mt-5 text-sm text-ink-muted">
+          Your name is how you sign in, and your PIN of 4 to 10 digits is the
+          only thing standing between your log and anyone who finds the URL —
+          so make it one you do not use elsewhere. Each account is separate;
+          nobody else here can see your weigh-ins or meals.
         </p>
 
         <PinForm action={signupAction} mode="signup" />

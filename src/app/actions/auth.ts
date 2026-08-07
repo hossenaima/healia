@@ -41,9 +41,22 @@ export async function signupAction(
   }
 
   const { hash, salt } = await hashPin(pin);
-  const user = await prisma.user.create({
-    data: { name, handle, pinHash: hash, pinSalt: salt, ...timezoneFrom(formData) },
-  });
+
+  // The check above is not a guarantee — two people submitting the same name
+  // at once both pass it, and the unique index decides. Catching that here is
+  // the difference between the loser seeing "pick another" and seeing a
+  // server error.
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: { name, handle, pinHash: hash, pinSalt: salt, ...timezoneFrom(formData) },
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { error: "That name is taken. Pick another." };
+    }
+    throw error;
+  }
 
   await startSession(user.id);
   redirect("/");
@@ -76,6 +89,15 @@ export async function loginAction(
   await startSession(user.id);
   // Only same-site relative paths, so `?next=` cannot bounce elsewhere.
   redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+}
+
+/** Prisma's code for a unique-constraint conflict. */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: string }).code === "P2002"
+  );
 }
 
 /** The browser reports its own zone; anything unresolvable is ignored. */

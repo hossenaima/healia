@@ -17,6 +17,7 @@ export function DayTotals({
   fiberTargetG,
   mealCount,
   weeklyAverage,
+  isToday,
 }: {
   eaten: Nutrition;
   activeBurn: number | null;
@@ -25,6 +26,8 @@ export function DayTotals({
   fiberTargetG: number | null;
   mealCount: number;
   weeklyAverage: number | null;
+  /** A day still in progress can only be "on track"; a past one is settled. */
+  isToday: boolean;
 }) {
   const [net, setNet] = useState(false);
   const canNet = activeBurn !== null && activeBurn > 0;
@@ -34,6 +37,11 @@ export function DayTotals({
   );
   const remaining =
     calorieTarget === null ? null : Math.round(calorieTarget - calories);
+
+  // Landing under target with nothing logged is not an achievement, it is an
+  // empty day — so this needs food in it before it says anything.
+  const onTarget =
+    calorieTarget !== null && mealCount > 0 && remaining !== null && remaining >= 0;
 
   return (
     <section className="glass mt-4 p-5" aria-label="Day totals">
@@ -97,6 +105,27 @@ export function DayTotals({
       )}
 
       {eaten.calories > 0 && <MacroBar macros={eaten} />}
+
+      {onTarget && (
+        <p
+          role="status"
+          className="celebrate mt-4 flex items-center gap-2 rounded-xl bg-surface-sunk px-3 py-2 text-sm"
+        >
+          <span aria-hidden className="text-down">
+            ◆
+          </span>
+          <span>
+            {isToday ? (
+              <>
+                On track — <span className="tnum">{remaining.toLocaleString()}</span>{" "}
+                kcal still in budget.
+              </>
+            ) : (
+              <>Finished this day on target.</>
+            )}
+          </span>
+        </p>
+      )}
 
       {weeklyAverage !== null && (
         <p className="tnum mt-4 border-t border-rule pt-3 text-xs text-ink-muted">

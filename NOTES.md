@@ -166,12 +166,38 @@ not compress the window and exaggerate a swing.
 `180` and silently cropped the leading digit off `180.4` once narrow ranges
 started getting a decimal.
 
+### Celebration
+
+**A milestone is shown once, then remembered.** `User.milestoneLbs` holds the
+largest one already congratulated. Without it the same "10 lb down" greets you
+every morning, which turns a moment into wallpaper. Monotonic, so regaining and
+re-losing the same five pounds does not replay it.
+
+**Not a modal.** The reason for opening the Weight tab is the number; a dialog
+in front of it celebrates *at* the user rather than with them. It is a card in
+the flow with one slow sweep of the accent, and a dismiss.
+
+**"On target" needs food in it.** A day under target with nothing logged is an
+empty day, not an achievement, so the calorie note requires at least one meal.
+
 ### Meals
 
 **Targets are entered by hand, never derived.** Mifflin-St Jeor can be off by
 hundreds of calories for an individual, and a wrong target would quietly skew
 the budget and every progress bar. Blank targets hide those features rather than
 guessing.
+
+**A logged meal is a saved meal.** There is no separate saved-meals table: a
+meal already holds its description and its priced-out items, so logging it
+again is a copy. `repeatMealAction` deliberately does not re-run the estimator
+— the items were already paid for, and re-estimating the same description would
+spend a request to get an answer we have and might get a slightly different
+one, making the same breakfast drift day to day. The list is deduplicated by
+name, most recent wins, because the useful question is "things I eat".
+
+**The button said "Save meal" and meant "log it today".** That reads as "keep
+this for later", which is what people expected it to do. It says "Log it" now,
+and the reuse list is what "saved" turned out to mean.
 
 **Itemise what the person can change, not what the dish is called.** If a
 description says what went into something, each component gets its own line —
@@ -332,6 +358,10 @@ Grouped by where they bite.
   frost implementation sat above the lens one for weeks; the later block won
   most properties so nothing looked wrong, and it was only found while chasing
   the position bug. Delete a superseded block when you supersede it.
+- **Fixed chrome at both ends means "scrolled into view" is not "visible".**
+  `scroll-padding-top`/`-bottom` on `html` account for the sticky header and
+  the tab bar; without them, focusing an input near the bottom parks it under
+  the bar, where a tap lands on a tab instead of the control.
 - **`viewport-fit=cover` is required** for `env(safe-area-inset-*)` to be
   non-zero on iPhone. Without it the bottom bar sits under the home indicator.
 - **`backdrop-filter: url(#filter)` does not work in Chrome.** SVG filters are
@@ -496,7 +526,15 @@ that works:
 - `document.querySelector("svg")` finds the glass filter's `<svg>`, not the
   chart. Scope to the chart's section.
 - Clicking immediately after a redirect can beat hydration; the click is
-  swallowed. Settle the page first.
+  swallowed. Wait for the control to *enable* rather than sleeping — a button
+  disabled until React sees a value will silently eat the click otherwise, and
+  the save just never happens.
+- Puppeteer positions its own clicks, so a control under the fixed tab bar gets
+  the tab instead. `scrollIntoView({ block: "center" })` first. A click that
+  quietly navigates to another tab looks exactly like a broken save.
+- **Restart `next start` after every build.** Serving a stale manifest against
+  freshly hashed chunks produces 500s on assets and CSS that looks like a
+  regression in the feature you just wrote.
 - A transition sampled after its duration looks like a jump. Sample inside it.
 
 ---

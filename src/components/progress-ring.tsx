@@ -4,6 +4,11 @@
  * A ring reads as "how far round am I" at a glance, which is the question this
  * number answers. The percentage is also written out, because an arc alone is
  * hard to read precisely.
+ *
+ * The arc sweeps up to its value when the tab opens. Pure CSS: the dash offset
+ * animates from a full circumference (empty) to zero (the drawn length), so
+ * nothing has to be measured or tweened in JavaScript, and the global
+ * reduced-motion override switches it off along with everything else.
  */
 export function ProgressRing({
   percent,
@@ -21,7 +26,8 @@ export function ProgressRing({
   const stroke = 12;
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;
-  const filled = percent === null ? 0 : (Math.min(100, Math.max(0, percent)) / 100) * circumference;
+  const filled =
+    percent === null ? 0 : (Math.min(100, Math.max(0, percent)) / 100) * circumference;
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -56,6 +62,8 @@ export function ProgressRing({
             strokeDasharray={`${filled} ${circumference}`}
             // Start at twelve o'clock rather than three.
             transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            className="ring-sweep"
+            style={{ "--ring-arc": `${filled}px` } as React.CSSProperties}
           />
         )}
       </svg>

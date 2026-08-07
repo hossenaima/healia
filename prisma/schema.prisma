@@ -54,6 +54,11 @@ model User {
   /// Local hour (0–23) for the weigh-in reminder. `notifyWeighIn` decides
   /// whether it is sent at all; this only decides when.
   reminderHour  Int     @default(8)
+  /// Largest weight-loss milestone already congratulated, in whole pounds.
+  /// Without it the same "10 lb down" would greet you every morning, which
+  /// turns a moment into wallpaper.
+  milestoneLbs Int @default(0)
+
   /// Day key of the last reminder actually sent. The schedulers that call the
   /// reminder route are all at-least-once, so this is what keeps a retry from
   /// becoming a second notification.

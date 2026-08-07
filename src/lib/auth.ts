@@ -31,6 +31,7 @@ export type SessionUser = {
   notifyWeighIn: boolean;
   notifyFriends: boolean;
   reminderHour: number;
+  milestoneLbs: number;
   calorieTarget: number | null;
   proteinTargetG: number | null;
   fiberTargetG: number | null;
@@ -52,9 +53,21 @@ export async function verifyPin(pin: string, hash: string, salt: string) {
   return timingSafeEqual(a, b);
 }
 
-/** "Aima " and "aima" are the same account. */
+/**
+ * The lookup key for a name. "Aima ", "aima" and "Aima  Hossen" all have to
+ * land on the same account as "Aima Hossen".
+ *
+ * Trimming and lowercasing alone was not enough: a doubled inner space made a
+ * second, separate account that looked identical in every list, and a friend
+ * request typed with single spaces could never find it. NFKC additionally
+ * folds full-width and other compatibility forms onto their plain equivalents.
+ */
 export function toHandle(name: string): string {
-  return name.trim().toLowerCase();
+  return name
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 }
 
 // --- Session cookie --------------------------------------------------------
@@ -104,6 +117,7 @@ export const currentUser = cache(async function currentUser(): Promise<SessionUs
     notifyWeighIn: user.notifyWeighIn,
     notifyFriends: user.notifyFriends,
     reminderHour: user.reminderHour,
+    milestoneLbs: user.milestoneLbs,
     calorieTarget: user.calorieTarget,
     proteinTargetG: user.proteinTargetG,
     fiberTargetG: user.fiberTargetG,

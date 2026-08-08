@@ -36,11 +36,20 @@ would otherwise rediscover the hard way, add it — see
 ## What Helia is
 
 A personal health log for a handful of people. Two daily habits: a morning
-weigh-in and meal logging, plus a light social layer for encouragement.
+weigh-in and meal logging, plus a light social layer for encouragement, and
+small celebrations when a milestone or a calorie target is met.
 
 - Repo: `git@github.com:hossenaima/helia.git`
 - Live: <https://helia-plum.vercel.app>
 - Five tabs: **Weight** (`/`), **Calendar**, **Meals**, **Friends**, **Settings**
+
+**State of play, 2026-08-07.** Seven accounts, five of them testers. Everything
+below is deployed and `main` is pushed. Working: weigh-ins with a trend chart
+and lb/kg switch, the calendar and Apple Health import, meals with Gemini
+estimation and one-tap reuse of a past meal, friends with per-account sharing,
+web push reminders on an hourly GitHub Actions sweep, and milestone
+celebrations. Not yet built: the steps-driven calorie bar. See
+[Open items](#open-items) for what is waiting.
 
 The app is used mostly on an iPhone, first thing in the morning. Optimise for
 that: fast, quiet, few taps, works one-handed.
@@ -48,8 +57,8 @@ that: fast, quiet, few taps, works one-handed.
 ## Who it is for, and how they work
 
 Built by its owner, with a handful of invited testers using it — currently
-Jerry plus Matthew, Saleh and Spider Man. Anyone with an account is meant to be
-there. Preferences
+Jerry plus Matthew, Saleh, Spider Man, fatboy and Nahian — seven accounts in
+all. Anyone with an account is meant to be there. Preferences
 observed over the course of building it — these are not guesses, they are things
 that were said or that were changed after feedback:
 
@@ -63,6 +72,9 @@ that were said or that were changed after feedback:
 - **Do not make the user do arithmetic the app can do.** The manual portion and
   broth-left toggles were removed with exactly this reasoning: "the AI can
   figure it out based on the description."
+- **An invited tester is not a user who chose this.** They were told "try my
+  app" and nothing else, so the sign-in and signup screens say what Helia is
+  and what it asks daily. Arriving at "Locked" and a PIN box told them nothing.
 - **Ship and look at it.** Work is reviewed in the browser on a phone-sized
   viewport, not in the diff. Screenshots land better than descriptions.
 
@@ -117,7 +129,8 @@ Days are `"YYYY-MM-DD"` strings, never timestamps. Weights are always stored in
 **pounds**. Every row hangs off a `User`, and every query filters on `userId`.
 
 - **User** — name/handle, `pinHash`/`pinSalt`, goal and target figures, `units`,
-  `timezone`, `notifyWeighIn`/`notifyFriends`/`reminderHour`, `lastRemindedOn`
+  `timezone`, `notifyWeighIn`/`notifyFriends`/`reminderHour`, `lastRemindedOn`,
+  `milestoneLbs` (largest celebration already shown), `shareWeight`/`shareMeals`
 - **WeightEntry** — one per `(userId, date)`; re-submitting corrects it
 - **Meal** → **MealItem** — items carry `basis` (the estimator's working),
   `source`, and `precision` (`exact` | `estimated`)
@@ -355,6 +368,17 @@ Grouped by where they bite.
 
 ### CSS
 
+- **The name is the login, so its normalisation is load-bearing.** `toHandle`
+  folds NFKC, trims, collapses inner whitespace runs and lowercases. Trimming
+  and lowercasing alone let `Dupe One` and `Dupe  One` become two accounts that
+  looked identical in every list — and a friend request typed with single
+  spaces could never find the doubled one. Changing this function re-keys every
+  lookup: check that no existing handle drifts before touching it.
+- **A uniqueness check before an insert is not a guarantee.** Two people
+  submitting the same name at once both passed it, and the loser got an
+  unhandled Prisma `P2002` rendered as "An error occurred in the Server
+  Components render". Catch the constraint violation and return the same
+  friendly message the pre-check would have.
 - **Unlayered CSS beats every Tailwind utility, whatever the specificity.**
   This is the single most expensive trap in this codebase and it has bitten
   three times. `@import "tailwindcss"` emits utilities into `@layer utilities`,
@@ -514,6 +538,10 @@ wanted here was already paid for:
   `animationDelay`. That is what `stagger()` would have cost 17kB for.
 - **The chart's trend line** — Recharts' own `isAnimationActive`. The daily area
   stays static; two lines animating at once reads as a fidget.
+- **The goal ring** — `stroke-dashoffset` winding back from a full
+  circumference to zero, so the arc draws itself from twelve o'clock rather
+  than fading in. The arc length is passed as a custom property, which is what
+  lets a keyframe animate a value only the server knows.
 - **Press feedback** — `.btn:active { transform: scale(0.98) }`. With
   `-webkit-tap-highlight-color` suppressed globally there was no acknowledgement
   of a tap at all.
@@ -620,8 +648,8 @@ Duolingo, Apple Fitness), not yet implemented:
 
 **Known and deliberate:**
 
-- **Signup is open on purpose.** Every account is invited — Matthew, Saleh and
-  Spider Man are testers, not strangers who wandered in. Do not "fix" this by
+- **Signup is open on purpose.** Every account is invited — the testers are
+  testers, not strangers who wandered in, and new ones appear mid-session. Do not "fix" this by
   setting `ALLOW_SIGNUP=false` without asking; it is a choice, not an
   oversight. The flag exists for when testing ends.
 - Supabase is in **us-west-1** while the owner is US East — ~70ms of avoidable
@@ -670,6 +698,11 @@ the hard way. Specifically:
 4. **A mistake with consequences** → wherever it will be read *before* the same
    move is made. The database section exists because of a real incident.
 5. **Something the owner said they want or do not want** → *Who it is for*.
+
+**Check that an edit landed.** Three of today's notes were written by a script
+whose anchor text had already been changed earlier in the same session, so the
+replacement silently did nothing and the lesson was lost until a grep went
+looking for it. Assert the anchor exists, or read the section back.
 
 Prune as well as add. A stale line is worse than a missing one — the portion and
 broth adjustments were described as current in this file for two days after

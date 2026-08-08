@@ -12,17 +12,14 @@ import { setSharingAction } from "@/app/actions/friends";
  */
 export function SharingControls({
   shareWeight,
-  shareCalories,
   shareMeals,
   friendCount,
 }: {
   shareWeight: boolean;
-  shareCalories: boolean;
   shareMeals: boolean;
   friendCount: number;
 }) {
   const [weight, setWeight] = useState(shareWeight);
-  const [calories, setCalories] = useState(shareCalories);
   const [meals, setMeals] = useState(shareMeals);
   const [, startSaving] = useTransition();
 
@@ -54,17 +51,8 @@ export function SharingControls({
             }}
           />
           <Toggle
-            label="Calories today"
-            hint="The day's total. Not what it was made of."
-            checked={calories}
-            onChange={(v) => {
-              setCalories(v);
-              save({ shareCalories: v });
-            }}
-          />
-          <Toggle
-            label="Meals"
-            hint="The names of what you logged today."
+            label="Meals and calories"
+            hint="Today's total, and each meal with what it cost."
             checked={meals}
             onChange={(v) => {
               setMeals(v);

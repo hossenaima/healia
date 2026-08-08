@@ -69,7 +69,6 @@ export default async function FriendsPage() {
 
       <SharingControls
         shareWeight={user.shareWeight}
-        shareCalories={user.shareCalories}
         shareMeals={user.shareMeals}
         friendCount={friends.length}
       />

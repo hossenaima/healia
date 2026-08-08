@@ -13,15 +13,15 @@ export type FriendSummary = {
   latestDate: string | null;
   /** Change since their previous weigh-in, in pounds. */
   changeLbs: number | null;
-  /** Today's intake in kcal, when they share it. */
+  /** Today's intake in kcal, when they share their food. */
   caloriesToday: number | null;
-  /** Names of today's meals, when they share them. */
-  mealsToday: string[];
+  /** Today's meals with what each one cost, when they share their food. */
+  mealsToday: Array<{ name: string; calories: number }>;
   streak: number;
   loggedToday: boolean;
   /** What they have chosen to show. Sent so the card can say "not shared"
    *  rather than silently render an empty row. */
-  shares: { weight: boolean; calories: boolean; meals: boolean };
+  shares: { weight: boolean; meals: boolean };
 };
 
 /**
@@ -41,7 +41,6 @@ const FRIEND_FIELDS = {
   name: true,
   timezone: true,
   shareWeight: true,
-  shareCalories: true,
   shareMeals: true,
 } as const;
 
@@ -75,7 +74,7 @@ export async function friendSummaries(userId: string): Promise<FriendSummary[]> 
 
   // Only fetch food for the people who share some of it, and only their own
   // today — "today" differs per person, so each is filtered to their own date.
-  const foodSharers = others.filter((o) => o.shareCalories || o.shareMeals);
+  const foodSharers = others.filter((o) => o.shareMeals);
   const meals = foodSharers.length
     ? await prisma.meal.findMany({
         where: {
@@ -111,21 +110,22 @@ export async function friendSummaries(userId: string): Promise<FriendSummary[]> 
         other.shareWeight && latest && previous
           ? latest.weightLbs - previous.weightLbs
           : null,
-      caloriesToday: other.shareCalories
+      caloriesToday: other.shareMeals
         ? Math.round(
             theirMeals.reduce((sum, m) => sum + mealNutrition(m).calories, 0),
           )
         : null,
-      mealsToday: other.shareMeals ? theirMeals.map((m) => m.name) : [],
+      mealsToday: other.shareMeals
+        ? theirMeals.map((m) => ({
+            name: m.name,
+            calories: Math.round(mealNutrition(m).calories),
+          }))
+        : [],
       streak: streak.current,
       // Still true when weight is private: it says they turned up, not what
       // the scale said.
       loggedToday: latest?.date === today,
-      shares: {
-        weight: other.shareWeight,
-        calories: other.shareCalories,
-        meals: other.shareMeals,
-      },
+      shares: { weight: other.shareWeight, meals: other.shareMeals },
     };
   });
 }

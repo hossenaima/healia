@@ -58,12 +58,16 @@ model User {
   /// matrix is a lot of bookkeeping for a five-person app, and "who exactly
   /// can see my food" is a question nobody wants to answer repeatedly.
   ///
-  /// Weight defaults on because friends could already see it. The other two
-  /// default off: they are newly shareable, and turning sharing on for data
-  /// that was private would be deciding something on the user's behalf.
-  shareWeight   Boolean @default(true)
-  shareCalories Boolean @default(false)
-  shareMeals    Boolean @default(false)
+  /// Weight defaults on because friends could already see it. Food defaults
+  /// off: it was never visible, and turning sharing on for data that was
+  /// private would be deciding something on the user's behalf.
+  ///
+  /// `shareMeals` covers the day's calorie total *and* the per-meal
+  /// breakdown. They were two switches briefly; a total you cannot attribute
+  /// to anything is not much use, and the pair only invited the incoherent
+  /// combination of "you may see 1,900 kcal but not that it was pizza".
+  shareWeight Boolean @default(true)
+  shareMeals  Boolean @default(false)
 
   /// Largest weight-loss milestone already congratulated, in whole pounds.
   /// Without it the same "10 lb down" would greet you every morning, which

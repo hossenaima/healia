@@ -30,9 +30,9 @@ correct or scale down.
 
 **Friends** (`/friends`) — add someone by the name they signed up with. Once
 they accept you can send each other short notes of encouragement, and see
-whatever the other person has chosen to share: their weigh-ins, the day's
-calorie total, and the names of the meals they logged. Weight starts on;
-calories and meals start off. Your streak is always visible — it says you
+whatever the other person has chosen to share: their weigh-ins, and their food
+for the day — the total with each meal and what it cost. Weight starts on;
+food starts off. Your streak is always visible — it says you
 turned up, not what the scale said. Requests and unread notes show as a count
 on the Friends tab.
 

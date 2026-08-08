@@ -5,6 +5,7 @@ import { friendSummaries, noteCutoff, NOTE_TTL_HOURS } from "@/lib/friends";
 import { formatMomentIn } from "@/lib/dates";
 import { PageTitle } from "@/components/page-title";
 import { FriendsPanel } from "@/components/friends-panel";
+import { SharingControls } from "@/components/sharing-controls";
 import { Encouragements } from "@/components/encouragements";
 
 export const dynamic = "force-dynamic";
@@ -41,8 +42,7 @@ export default async function FriendsPage() {
     <>
       <PageTitle>Friends</PageTitle>
       <p className="mt-2 text-sm text-ink-muted">
-        Cheer each other on. Friends see your weigh-ins and streak — never your
-        meals.
+        Cheer each other on. You choose what they see.
       </p>
 
       <Encouragements
@@ -65,6 +65,13 @@ export default async function FriendsPage() {
         incoming={incoming.map((r) => ({ id: r.id, name: r.requester.name }))}
         outgoing={outgoing.map((r) => ({ id: r.id, name: r.addressee.name }))}
         units={user.units}
+      />
+
+      <SharingControls
+        shareWeight={user.shareWeight}
+        shareCalories={user.shareCalories}
+        shareMeals={user.shareMeals}
+        friendCount={friends.length}
       />
     </>
   );

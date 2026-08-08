@@ -32,6 +32,9 @@ export type SessionUser = {
   notifyFriends: boolean;
   reminderHour: number;
   milestoneLbs: number;
+  shareWeight: boolean;
+  shareCalories: boolean;
+  shareMeals: boolean;
   calorieTarget: number | null;
   proteinTargetG: number | null;
   fiberTargetG: number | null;
@@ -118,6 +121,9 @@ export const currentUser = cache(async function currentUser(): Promise<SessionUs
     notifyFriends: user.notifyFriends,
     reminderHour: user.reminderHour,
     milestoneLbs: user.milestoneLbs,
+    shareWeight: user.shareWeight,
+    shareCalories: user.shareCalories,
+    shareMeals: user.shareMeals,
     calorieTarget: user.calorieTarget,
     proteinTargetG: user.proteinTargetG,
     fiberTargetG: user.fiberTargetG,

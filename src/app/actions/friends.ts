@@ -172,3 +172,22 @@ export async function markEncouragementsReadAction() {
   });
   revalidatePath("/friends");
 }
+
+/** What all your friends may see. One setting, not one per friend. */
+export async function setSharingAction(input: {
+  shareWeight?: boolean;
+  shareCalories?: boolean;
+  shareMeals?: boolean;
+}): Promise<FriendResult> {
+  const me = await requireUser();
+
+  const data: typeof input = {};
+  for (const key of ["shareWeight", "shareCalories", "shareMeals"] as const) {
+    if (typeof input[key] === "boolean") data[key] = input[key];
+  }
+  if (Object.keys(data).length === 0) return { ok: true };
+
+  await prisma.user.update({ where: { id: me.id }, data });
+  revalidatePath("/friends");
+  return { ok: true };
+}

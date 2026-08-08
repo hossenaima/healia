@@ -114,8 +114,7 @@ export function FriendsPanel({
             {state.error ?? state.message ?? ""}
           </p>
           <p className="mt-1 text-xs text-ink-muted">
-            They see your weigh-ins and streak once they accept — never your
-            meals.
+            Once they accept, they see whatever you have switched on below.
           </p>
         </form>
 
@@ -161,14 +160,18 @@ function FriendCard({
       <div className="flex items-baseline justify-between gap-3">
         <p className="min-w-0 flex-1 truncate font-bold">{friend.name}</p>
         <span className="tnum shrink-0 text-sm">
-          {friend.latestLbs === null
-            ? "—"
-            : `${fromLbs(friend.latestLbs, units).toFixed(1)} ${units}`}
+          {friend.latestLbs !== null
+            ? `${fromLbs(friend.latestLbs, units).toFixed(1)} ${units}`
+            : friend.shares.weight
+              ? "—"
+              : ""}
         </span>
       </div>
 
       <p className="mt-1 text-xs text-ink-muted">
-        {friend.latestDate === null ? (
+        {!friend.shares.weight ? (
+          friend.loggedToday ? "Logged today" : "Weight is private"
+        ) : friend.latestDate === null ? (
           "Has not logged a weigh-in yet"
         ) : (
           <>
@@ -187,7 +190,25 @@ function FriendCard({
             {friend.streak > 0 && <> · 🔥 {friend.streak}</>}
           </>
         )}
+        {!friend.shares.weight && friend.streak > 0 && (
+          <> · 🔥 {friend.streak}</>
+        )}
       </p>
+
+      {(friend.caloriesToday !== null || friend.mealsToday.length > 0) && (
+        <p className="mt-1.5 text-xs text-ink-muted">
+          {friend.caloriesToday !== null && (
+            <>
+              <span className="tnum">
+                {friend.caloriesToday.toLocaleString()}
+              </span>{" "}
+              kcal today
+            </>
+          )}
+          {friend.caloriesToday !== null && friend.mealsToday.length > 0 && " · "}
+          {friend.mealsToday.length > 0 && friend.mealsToday.join(", ")}
+        </p>
+      )}
 
       <form action={sendAction} className="mt-3">
         <input type="hidden" name="toId" value={friend.id} />

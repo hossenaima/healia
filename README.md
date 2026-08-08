@@ -29,9 +29,12 @@ working** reveals the portion it assumed for each item, which you can then
 correct or scale down.
 
 **Friends** (`/friends`) — add someone by the name they signed up with. Once
-they accept, you each see the other's latest weigh-in, their change, and their
-streak, and you can send a short note of encouragement. Friends never see each
-other's meals. Requests and unread notes show as a count on the Friends tab.
+they accept you can send each other short notes of encouragement, and see
+whatever the other person has chosen to share: their weigh-ins, the day's
+calorie total, and the names of the meals they logged. Weight starts on;
+calories and meals start off. Your streak is always visible — it says you
+turned up, not what the scale said. Requests and unread notes show as a count
+on the Friends tab.
 
 **Settings** (`/settings`) — goal weight, start weight, units (lb or kg), your
 PIN, and notifications.

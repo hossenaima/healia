@@ -220,9 +220,26 @@ extracted readings cross the network.
 **A friendship is one row with a `status`.** Both requester and addressee
 indexes exist because both directions get queried.
 
-**`friendSummaries()` reads weigh-ins and streaks only.** No query on the
-friends path touches `Meal`. That is the boundary the feature promises in its
-own copy — keep it that way.
+**Sharing is the subject's decision, not the viewer's.** `User.shareWeight`,
+`shareCalories` and `shareMeals` govern what others see of *you*, one setting
+covering every friend — a per-friend matrix is a lot of bookkeeping for a
+seven-person app, and "who exactly can see my food" is not a question anyone
+wants to answer repeatedly.
+
+**Enforced in `friendSummaries()`, never in the component.** A value that
+reaches the client has been shared whether or not anything renders it. The
+gating happens where the row is read, and food is not even fetched for people
+who share none of it.
+
+**Weight defaults on; calories and meals default off.** Weight was already
+visible to accepted friends, so defaulting it off would silently withdraw
+something. The other two were never visible, so defaulting them on would
+publish food logs on the user's behalf. Migrations that add a sharing flag
+should follow the same rule.
+
+**Streak and "logged today" are always visible.** They say a person turned up,
+not what they weigh or ate, and with everything else off a friend card would
+be a name with nothing to encourage.
 
 **`requestFriendAction` returns the same message whether or not the name
 exists**, so the form cannot be used to discover who has an account.
